@@ -1,0 +1,13 @@
+# production
+/build
+
+# Mac files
+**/.DS_Store*
+
+# IDE
+/.idea
+/target
+/.classpath
+/.project
+.settings
+.settings/*
