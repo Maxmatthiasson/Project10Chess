@@ -17,6 +17,9 @@ public class ChessGame {
 	public static final int GAME_STATE_BLACK = 1;
 	public static final int GAME_STATE_END = 2;
 
+	private boolean whiteInCheck = false;
+	private boolean blackInCheck = false;
+
 	// 0 = bottom, size = top
 	private List<Piece> pieces = new ArrayList<Piece>();
 
@@ -123,6 +126,7 @@ public class ChessGame {
 
 		piece.setRow(targetRow);
 		piece.setColumn(targetColumn);
+		piece.touch();
 
 		if (isGameEndConditionReached()) {
 			this.gameState = GAME_STATE_END;
@@ -250,6 +254,22 @@ public class ChessGame {
 			default:
 				throw new IllegalStateException("unknown game state:" + this.gameState);
 		}
+	}
+
+	public void setWhiteInCheck(boolean check) {
+		whiteInCheck = check;
+	}
+
+	public boolean isWhiteInCheck() {
+		return whiteInCheck;
+	}
+
+	public void setBlackInCheck(boolean check) {
+		blackInCheck = check;
+	}
+
+	public boolean isBlackInCheck() {
+		return blackInCheck;
 	}
 
 }

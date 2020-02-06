@@ -45,6 +45,7 @@ public class Piece {
 	public static final int COLUMN_H = 7;
 	
 	private boolean isCaptured = false;
+	private boolean isTouched = true;
 
 	public Piece(int color, int type, int row, int column) {
 		this.row = row;
@@ -133,6 +134,14 @@ public class Piece {
 
 	public boolean isCaptured() {
 		return this.isCaptured;
+	}
+
+	public void touch() {
+		isTouched = true;
+	}
+
+	public boolean isTouched() {
+		return isTouched;
 	}
 
 }
