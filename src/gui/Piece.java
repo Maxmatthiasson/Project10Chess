@@ -77,7 +77,22 @@ public class Piece {
 	@Override
 	public String toString() {
 		String strColor = (this.color==COLOR_WHITE?"white":"black");
+
+		String strRow = getRowString(this.row);
+		String strColumn = getColumnString(this.column);
 		
+		return strColor+" "+getTypeString()+" "+strRow+"/"+strColumn;
+	}
+
+	public String getColorAndType() {
+		return (color == COLOR_WHITE ? "W" : "B") + getTypeString();
+	}
+
+	public int getType() {
+		return this.type;
+	}
+
+	public String getTypeString() {
 		String strType = "unknown";
 		switch (this.type) {
 			case TYPE_BISHOP: strType = "B";break;
@@ -87,15 +102,7 @@ public class Piece {
 			case TYPE_QUEEN: strType = "Q";break;
 			case TYPE_ROOK: strType = "R";break;
 		}
-		
-		String strRow = getRowString(this.row);
-		String strColumn = getColumnString(this.column);
-		
-		return strColor+" "+strType+" "+strRow+"/"+strColumn;
-	}
-
-	public int getType() {
-		return this.type;
+		return strType;
 	}
 	
 	public static String getRowString(int row){

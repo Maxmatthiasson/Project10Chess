@@ -2,8 +2,6 @@ package logic;
 
 import gui.Piece;
 
-import java.util.LinkedList;
-
 /**
  * @author Murat, Alex, Nikola and Ermin
  */
@@ -38,13 +36,8 @@ public class MoveValidator {
         }
 
         // source piece has right color?
-        if (sourcePiece.getColor() == Piece.COLOR_WHITE
-                && this.chessGame.getGameState() == ChessGame.GAME_STATE_WHITE) {
-            // ok
-        } else if (sourcePiece.getColor() == Piece.COLOR_BLACK
-                && this.chessGame.getGameState() == ChessGame.GAME_STATE_BLACK) {
-            // ok
-        } else {
+        if (!((sourcePiece.getColor() == Piece.COLOR_WHITE && this.chessGame.getGameState() == ChessGame.GAME_STATE_WHITE) ||
+                (sourcePiece.getColor() == Piece.COLOR_BLACK && this.chessGame.getGameState() == ChessGame.GAME_STATE_BLACK))) {
             System.out.println("it's not your turn");
             return false;
         }
@@ -189,8 +182,12 @@ public class MoveValidator {
         // file or diagonal, thus the move forms an "L"-shape two squares long and one
         // square wide. The knight is the only piece which can leap over other pieces.
 
-        return ((Math.abs(sourceRow - targetRow) == 2 && Math.abs(sourceColumn - targetColumn) == 1) ||
-                (Math.abs(sourceRow - targetRow) == 1 && Math.abs(sourceColumn - targetColumn) == 2));
+        if ((Math.abs(sourceRow - targetRow) == 2 && Math.abs(sourceColumn - targetColumn) == 1) ||
+                (Math.abs(sourceRow - targetRow) == 1 && Math.abs(sourceColumn - targetColumn) == 2))
+            return true;
+        else
+            System.out.println("Invalid knight move");
+        return false;
     }
 
     private boolean isValidKingMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
@@ -227,10 +224,10 @@ public class MoveValidator {
     private boolean arePiecesBetweenSourceAndTarget(int sourceRow, int sourceColumn,
                                                     int targetRow, int targetColumn) {
         int rowIncrementPerStep = Integer.compare(targetRow, sourceRow),
-                columnIncrementPerStep = Integer.compare(targetColumn, sourceColumn);
+                columnIncrementPerStep = Integer.compare(targetColumn, sourceColumn),
+                currentRow = sourceRow + rowIncrementPerStep,
+                currentColumn = sourceColumn + columnIncrementPerStep;
 
-        int currentRow = sourceRow + rowIncrementPerStep;
-        int currentColumn = sourceColumn + columnIncrementPerStep;
         while (true) {
             if (currentRow == targetRow && currentColumn == targetColumn) {
                 break;
@@ -252,31 +249,30 @@ public class MoveValidator {
     }
 
     public boolean checkValidator(int color) {
-        //Piece whiteKing = null, blackKing = null;
-        LinkedList<Piece> kings = new LinkedList<>();
+        Piece king = null;
         for (Piece p : chessGame.getPieces())
-            if (p.getType() == Piece.TYPE_KING) {
-                if (p.getColor() == Piece.COLOR_WHITE)
-                    kings.add(p);
-                else if (p.getColor() == Piece.COLOR_BLACK)
-                    kings.add(p);
+            if (p.getType() == Piece.TYPE_KING && p.getColor() == color) {
+                    king = p;
+                    break;
             }
-        boolean blackInCheck = false, whiteInCheck = false;
 
-        for (Piece king : kings) {
-            // Check bishops, queens, pawns, and kings
-            int[] rows = {1, 1, -1, -1}, columns = {1, -1, -1, 1};
-            int currentRow = king.getRow(), currentColumn = king.getColumn();
-            Piece checkingPiece = null;
-            for (int i = 0; i < rows.length && checkingPiece == null; i++) {
-                do {
-                    currentRow += rows[i];
-                    currentColumn += columns[i];
-                    checkingPiece = chessGame.getNonCapturedPieceAtLocation(currentRow, currentColumn);
-                } while (checkingPiece == null && currentRow > 0 && currentRow < 7 && currentColumn > 0 && currentColumn < 7);
+        // Check bishops, queens, pawns, and kings
+        int[] row = {1, 1, -1, -1}, col = {1, -1, -1, 1};
+        Piece checkingPiece;
+        int curRow, curCol;
 
-                if (checkingPiece != null) {
-                    if (checkingPiece.getType() == Piece.TYPE_QUEEN ||
+        for (int i = 0; i < row.length; i++) {
+            curRow = king.getRow();
+            curCol = king.getColumn();
+            do {
+                curRow += row[i];
+                curCol += col[i];
+                checkingPiece = chessGame.getNonCapturedPieceAtLocation(curRow, curCol);
+            } while (checkingPiece == null && curRow > 0 && curRow < 7 && curCol > 0 && curCol < 7);
+
+            if ((checkingPiece != null &&
+                    checkingPiece.getColor() != king.getColor()) &&
+                    (checkingPiece.getType() == Piece.TYPE_QUEEN ||
                             checkingPiece.getType() == Piece.TYPE_BISHOP ||
                             (checkingPiece.getType() == Piece.TYPE_KING &&
                                     Math.abs(king.getRow() - checkingPiece.getRow()) < 2 &&
@@ -288,165 +284,43 @@ public class MoveValidator {
                                             Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1)) ||
                                     (king.getColor() == Piece.COLOR_WHITE && checkingPiece.getColor() == Piece.COLOR_BLACK &&
                                             checkingPiece.getRow() - king.getRow() == 1 &&
-                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1))) {
-                        if (king.getColor() == Piece.COLOR_BLACK && checkingPiece.getColor() == Piece.COLOR_WHITE)
-                            blackInCheck = true;
-                        else if (king.getColor() == Piece.COLOR_WHITE && checkingPiece.getColor() == Piece.COLOR_BLACK)
-                            whiteInCheck = true;
-                    }
-                }
-            }
+                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1))))
+                return true;
+        }
 
-            // check rooks and kings and queens
-            rows = new int[]{1, 0, -1, 0};
-            columns = new int[]{0, 1, 0, -1};
-            currentRow = king.getRow();
-            currentColumn = king.getColumn();
-            checkingPiece = null;
+        // check rooks and kings and queens
+        row = new int[]{1, 0, -1, 0};
+        col = new int[]{0, 1, 0, -1};
 
-            for (int i = 0; i < rows.length && checkingPiece == null; i++) {
-                do {
-                    currentRow += rows[i];
-                    currentColumn += columns[i];
-                    checkingPiece = chessGame.getNonCapturedPieceAtLocation(currentRow, currentColumn);
-                } while (checkingPiece == null && currentRow > 0 && currentRow < 7 && currentColumn > 0 && currentColumn < 7);
+        for (int i = 0; i < row.length; i++) {
+            curRow = king.getRow();
+            curCol = king.getColumn();
+            do {
+                curRow += row[i];
+                curCol += col[i];
+                checkingPiece = chessGame.getNonCapturedPieceAtLocation(curRow, curCol);
+            } while (checkingPiece == null && curRow > 0 && curRow < 7 && curCol > 0 && curCol < 7);
 
-                if (checkingPiece != null) {
-                    if (checkingPiece.getType() == Piece.TYPE_QUEEN ||
+            if ((checkingPiece != null &&
+                    checkingPiece.getColor() != king.getColor() &&
+                    (checkingPiece.getType() == Piece.TYPE_QUEEN ||
                             checkingPiece.getType() == Piece.TYPE_ROOK ||
                             (checkingPiece.getType() == Piece.TYPE_KING &&
                                     Math.abs(king.getRow() - checkingPiece.getRow()) < 2 &&
-                                    Math.abs(king.getColumn() - checkingPiece.getColumn()) < 2))
-                        if (king.getColor() == Piece.COLOR_BLACK && checkingPiece.getColor() == Piece.COLOR_WHITE)
-                            blackInCheck = true;
-                        else if (king.getColor() == Piece.COLOR_WHITE && checkingPiece.getColor() == Piece.COLOR_BLACK)
-                            whiteInCheck = true;
-                }
-            }
-
-            //Check knights
-            rows = new int[]{2, 2, -2, -2, 1, 1, -1, -1};
-            columns = new int[]{1, -1, 1, -1, 2, -2, 2, -2};
-            for (int i = 0; i < rows.length; i++) {
-                Piece knight = chessGame.getNonCapturedPieceAtLocation(king.getRow() + rows[i], king.getColumn() + columns[i]);
-                if (knight != null && knight.getType() == Piece.TYPE_KNIGHT)
-                    if (king.getColor() == Piece.COLOR_BLACK && knight.getColor() == Piece.COLOR_WHITE)
-                        blackInCheck = true;
-                    else if (king.getColor() == Piece.COLOR_WHITE && knight.getColor() == Piece.COLOR_BLACK)
-                        whiteInCheck = true;
-
-            }
+                                    Math.abs(king.getColumn() - checkingPiece.getColumn()) < 2))))
+                return true;
         }
+
+        //Check knights
+        row = new int[]{2, 2, -2, -2, 1, 1, -1, -1};
+        col = new int[]{1, -1, 1, -1, 2, -2, 2, -2};
+
+        for (int i = 0; i < row.length; i++) {
+            checkingPiece = chessGame.getNonCapturedPieceAtLocation(king.getRow() + row[i], king.getColumn() + col[i]);
+            if (checkingPiece != null && checkingPiece.getColor() != king.getColor() && checkingPiece.getType() == Piece.TYPE_KNIGHT)
+                return true;
+        }
+
         return false;
-    }
-
-    public static void main(String[] args) {
-        ChessGame ch = new ChessGame();
-        MoveValidator mo = new MoveValidator(ch);
-        boolean isValid;
-
-        int sourceRow;
-        int sourceColumn;
-        int targetRow;
-        int targetColumn;
-        int testCounter = 1;
-
-        // 1 ok
-        sourceRow = Piece.ROW_2;
-        sourceColumn = Piece.COLUMN_D;
-        targetRow = Piece.ROW_3;
-        targetColumn = Piece.COLUMN_D;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (true == isValid));
-        testCounter++;
-
-        // 2 it's not white's turn
-        sourceRow = Piece.ROW_2;
-        sourceColumn = Piece.COLUMN_B;
-        targetRow = Piece.ROW_3;
-        targetColumn = Piece.COLUMN_B;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (false == isValid));
-        testCounter++;
-
-        // 3 ok
-        sourceRow = Piece.ROW_7;
-        sourceColumn = Piece.COLUMN_E;
-        targetRow = Piece.ROW_6;
-        targetColumn = Piece.COLUMN_E;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (true == isValid));
-        testCounter++;
-
-        // 4 pieces in the way
-        sourceRow = Piece.ROW_1;
-        sourceColumn = Piece.COLUMN_F;
-        targetRow = Piece.ROW_4;
-        targetColumn = Piece.COLUMN_C;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (false == isValid));
-        testCounter++;
-
-        // 5 ok
-        sourceRow = Piece.ROW_1;
-        sourceColumn = Piece.COLUMN_C;
-        targetRow = Piece.ROW_4;
-        targetColumn = Piece.COLUMN_F;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (true == isValid));
-        testCounter++;
-
-        // 6 ok
-        sourceRow = Piece.ROW_8;
-        sourceColumn = Piece.COLUMN_B;
-        targetRow = Piece.ROW_6;
-        targetColumn = Piece.COLUMN_C;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (true == isValid));
-        testCounter++;
-
-        // 7 invalid knight move
-        sourceRow = Piece.ROW_1;
-        sourceColumn = Piece.COLUMN_G;
-        targetRow = Piece.ROW_3;
-        targetColumn = Piece.COLUMN_G;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (false == isValid));
-        testCounter++;
-
-        // invalid knight move
-        sourceRow = Piece.ROW_1;
-        sourceColumn = Piece.COLUMN_G;
-        targetRow = Piece.ROW_2;
-        targetColumn = Piece.COLUMN_E;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (false == isValid));
-        testCounter++;
-
-        // ok
-        sourceRow = Piece.ROW_1;
-        sourceColumn = Piece.COLUMN_G;
-        targetRow = Piece.ROW_3;
-        targetColumn = Piece.COLUMN_H;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (true == isValid));
-        testCounter++;
-
-        // pieces in between
-        sourceRow = Piece.ROW_8;
-        sourceColumn = Piece.COLUMN_A;
-        targetRow = Piece.ROW_5;
-        targetColumn = Piece.COLUMN_A;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter + ". test result: " + (false == isValid));
-        testCounter++;
-
-        //ConsoleGui.printCurrentGameState(ch);
     }
 }

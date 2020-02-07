@@ -1,4 +1,4 @@
-package Online;
+package online;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

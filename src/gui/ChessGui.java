@@ -16,8 +16,8 @@ import java.util.List;
 
 import javax.swing.*;
 
-import Online.ChessClient;
-import Online.ChessServer;
+import online.ChessClient;
+import online.ChessServer;
 import logic.ChessGame;
 import logic.PiecesDragAndDropListener;
 

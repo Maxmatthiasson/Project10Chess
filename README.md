@@ -1,2 +1,2 @@
 # Project10Chess
-Online chess
+online chess
