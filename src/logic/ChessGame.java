@@ -1,23 +1,25 @@
 package logic;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import enums.Color;
 import enums.Type;
 import gui.Piece;
+
+import static enums.Color.WHITE;
 
 /**
  * @author Murat, Alex, Nikola and Ermin
  */
 public class ChessGame {
 
-    int gameState = GAME_STATE_WHITE;
-    public static final int GAME_STATE_WHITE = 0;
+    private Color gameState = WHITE;
+    /*public static final int GAME_STATE_WHITE = 0;
     public static final int GAME_STATE_BLACK = 1;
-    public static final int GAME_STATE_END = 2;
+    public static final int GAME_STATE_END = 2;*/
 
     private boolean whiteInCheck = false;
     private boolean blackInCheck = false;
@@ -41,31 +43,31 @@ public class ChessGame {
 
     // A constructor for testing purposes, get any starting condition you need
     public ChessGame(LinkedList<Piece> pieces) {
-        for (Piece p: pieces)
+        for (Piece p : pieces)
             createAndAddPiece(p.getColor(), p.getType(), p.getRow(), p.getColumn());
     }
 
     private void startPositions() {
         // create and place pieces
         // rook, knight, bishop, queen, king, bishop, knight, and rook
-        createAndAddPiece(Color.WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_A);
-        createAndAddPiece(Color.WHITE, Type.Knight, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_A);
+        createAndAddPiece(WHITE, Type.Knight, Piece.ROW_1,
                 Piece.COLUMN_B);
-        createAndAddPiece(Color.WHITE, Type.Bishop, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.Bishop, Piece.ROW_1,
                 Piece.COLUMN_C);
-        createAndAddPiece(Color.WHITE, Type.Queen, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.Queen, Piece.ROW_1,
                 Piece.COLUMN_D);
-        createAndAddPiece(Color.WHITE, Type.King, Piece.ROW_1, Piece.COLUMN_E);
-        createAndAddPiece(Color.WHITE, Type.Bishop, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.King, Piece.ROW_1, Piece.COLUMN_E);
+        createAndAddPiece(WHITE, Type.Bishop, Piece.ROW_1,
                 Piece.COLUMN_F);
-        createAndAddPiece(Color.WHITE, Type.Knight, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.Knight, Piece.ROW_1,
                 Piece.COLUMN_G);
-        createAndAddPiece(Color.WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_H);
+        createAndAddPiece(WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_H);
 
         // pawns
         int currentColumn = Piece.COLUMN_A;
         for (int i = 0; i < 8; i++) {
-            createAndAddPiece(Color.WHITE, Type.Pawn, Piece.ROW_2,
+            createAndAddPiece(WHITE, Type.Pawn, Piece.ROW_2,
                     currentColumn);
             currentColumn++;
         }
@@ -136,18 +138,16 @@ public class ChessGame {
             return false;
         }
 
-        Color opponentColor = (piece.getColor() == Color.BLACK ? Color.WHITE
-                : Color.BLACK);
+        Color opponentColor = (piece.getColor().reverse());
         if (!castlingInProgress) {
 
+            Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
 
             // check if the move is capturing an opponent piece
             if (isNonCapturedPieceAtLocation(opponentColor, targetRow, targetColumn)) {
-                Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
                 opponentPiece.isCaptured(true);
                 resetCounter = true;
             }
-
 
             piece.setRow(targetRow);
             piece.setColumn(targetColumn);
@@ -156,6 +156,8 @@ public class ChessGame {
                 System.out.println("illegal move, puts king in check");
                 piece.setRow(sourceRow);
                 piece.setColumn(sourceColumn);
+                if (opponentPiece != null)
+                    opponentPiece.isCaptured(false);
                 return false;
             }
 
@@ -175,10 +177,10 @@ public class ChessGame {
         changeGameState();
 
         if (moveValidator.checkValidator(opponentColor))
-            if (opponentColor == Color.WHITE) {
+            if (opponentColor == WHITE) {
                 System.out.println("White in check");
                 whiteInCheck = true;
-                if (mateValidator(Color.WHITE)) {
+                if (mateValidator(WHITE)) {
                     System.out.println("White in checkmate");
                     whiteInMate = true;
                 }
@@ -258,7 +260,7 @@ public class ChessGame {
     /**
      * @return current game state (one of ChessGame.GAME_STATE_..)
      */
-    public int getGameState() {
+    public Color getGameState() {
         return this.gameState;
     }
 
@@ -273,34 +275,23 @@ public class ChessGame {
      * switches the game state depending on the current board situation.
      */
     public void changeGameState() {
-        switch (this.gameState) {
-            case GAME_STATE_BLACK:
-                this.gameState = GAME_STATE_WHITE;
-                break;
-            case GAME_STATE_WHITE:
-                this.gameState = GAME_STATE_BLACK;
-                break;
-            case GAME_STATE_END:
-                // don't change anymore
-                break;
-            default:
-                throw new IllegalStateException("unknown game state:" + this.gameState);
-        }
+        if (gameState != null)
+            gameState = gameState.reverse();
     }
 
     private void checkEndConditions() {
         // check if game end condition has been reached
         //
-        if (whiteInMate ||  blackInMate || moveCounter == 50) {
+        if (whiteInMate || blackInMate || moveCounter == 50) {
 
             if (whiteInMate) {
                 System.out.println("Game over! Black won!");
-            } else if (blackInMate){
+            } else if (blackInMate) {
                 System.out.println("Game over! White won!");
             } else
                 System.out.println("50 move rule, stalemate!");
 
-            this.gameState = ChessGame.GAME_STATE_END;
+            this.gameState = null;
         }
     }
 
@@ -311,7 +302,7 @@ public class ChessGame {
             if (p.getColor() == color && !p.isCaptured()) {
 
                 if (p.getType() == Type.Pawn) {
-                    int[] row = (color == Color.WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
+                    int[] row = (color == WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
                     int[] col = {-1, 0, 1, 0};
                     for (int i = 0; i < row.length; i++) {
                         if ((i < 3 || !p.isTouched()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i])) {

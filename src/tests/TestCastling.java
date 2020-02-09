@@ -1,10 +1,10 @@
 package tests;
 
+import enums.Color;
 import enums.Type;
 import gui.Piece;
 import logic.ChessGame;
 
-import java.awt.*;
 import java.util.LinkedList;
 
 public class TestCastling {

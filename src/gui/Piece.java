@@ -1,8 +1,7 @@
 package gui;
 
+import enums.Color;
 import enums.Type;
-
-import java.awt.*;
 
 /**
  * 

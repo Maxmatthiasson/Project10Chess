@@ -1,8 +1,11 @@
 package gui;
 
-import java.awt.*;
-
 //Creates a chess piece and positions it on a specific row and colum
+
+import enums.Color;
+
+import java.awt.Image;
+
 /**
  * 
  * @author Alex and Nikola

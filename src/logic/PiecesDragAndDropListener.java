@@ -1,6 +1,5 @@
 package logic;
 
-import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -8,7 +7,6 @@ import java.util.List;
 
 import gui.ChessGui;
 import gui.GuiPiece;
-import gui.Piece;
 
 /**
  * 
@@ -57,13 +55,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 
 			if(mouseOverPiece(guiPiece,x,y)){
 				
-				if( (	this.chessGui.getGameState() == ChessGame.GAME_STATE_WHITE
-						&& guiPiece.getColor() == Color.WHITE
-					) ||
-					(	this.chessGui.getGameState() == ChessGame.GAME_STATE_BLACK
-							&& guiPiece.getColor() == Color.BLACK
-						)
-					){
+				if (this.chessGui.getGameState() == guiPiece.getColor()){
 					// calculate offset, because we do not want the drag piece
 					// to jump with it's upper left corner to the current mouse
 					// position

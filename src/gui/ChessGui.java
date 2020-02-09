@@ -12,6 +12,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import enums.Color;
 import enums.Type;
 import online.ChessClient;
 import online.ChessServer;
@@ -67,7 +68,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private JTextField opponent;
     private Font messageFont = new Font("Verdana", Font.BOLD, 15);
     private Font conected = new Font("Verdana", Font.PLAIN, 10);
-    private Color color;
+    private java.awt.Color color;
 
     private String user;
     private String yourIP;
@@ -129,7 +130,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.lblGameState = new JLabel(labelText);
         lblGameState.setBounds(100, 240, 200, 100);
         lblGameState.setFont(new Font("Verdana", Font.BOLD, 30));
-        lblGameState.setForeground(Color.WHITE);
+        lblGameState.setForeground(java.awt.Color.WHITE);
         this.add(lblGameState);
     }
 
@@ -174,7 +175,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         if (this.opponentFound == true) {
             gameOn.setText("Opponent found ");
         }
-        gameOn.setForeground(Color.WHITE);
+        gameOn.setForeground(java.awt.Color.WHITE);
         gameOn.setFont(conected);
         gameOn.setSize(200, 30);
         gameOn.setLocation(60, 15);
@@ -207,8 +208,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.logIn = new JButton("Join game");
         logIn.setBounds(300, 520, 210, 50);
         logIn.setVisible(true);
-        logIn.setBackground(Color.BLUE);
-        logIn.setForeground(Color.WHITE);
+        logIn.setBackground(java.awt.Color.BLUE);
+        logIn.setForeground(java.awt.Color.WHITE);
         logIn.setFont(new Font("Tahoma", Font.BOLD, 20));
         this.add(logIn, 3, 0);
         logIn.addActionListener(this);
@@ -218,8 +219,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.acceptCon = new JButton("Start as host");
         acceptCon.setBounds(350, 415, 240, 50);
         acceptCon.setVisible(true);
-        acceptCon.setBackground(Color.WHITE);
-        acceptCon.setForeground(Color.DARK_GRAY);
+        acceptCon.setBackground(java.awt.Color.WHITE);
+        acceptCon.setForeground(java.awt.Color.DARK_GRAY);
         acceptCon.setFont(new Font("Tahoma", Font.BOLD, 15));
         this.add(acceptCon, 3, 0);
         acceptCon.addActionListener(this);
@@ -227,7 +228,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     }
 
     public void userName() {
-        this.color = new Color(204, 204, 204);
+        this.color = new java.awt.Color(204, 204, 204);
         this.userName = new JTextField();
         userName.setBounds(350, 285, 240, 40);
         userName.setVisible(true);
@@ -254,7 +255,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.lblYourIP = new JLabel("Player IP: " + yourIP);
         lblYourIP.setBounds(270, 670, 350, 100);
         lblYourIP.setFont(new Font("Verdana", Font.BOLD, 20));
-        lblYourIP.setForeground(Color.WHITE);
+        lblYourIP.setForeground(java.awt.Color.WHITE);
         this.add(lblYourIP, 3, 0);
     }
 
@@ -360,22 +361,10 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
      * @return textual description of current game state
      */
     private String getGameStateAsText() {
-        String state = "unknown";
-        switch (this.chessGame.getGameState()) {
-            case ChessGame.GAME_STATE_BLACK:
-                state = "BLACK";
-                break;
-            case ChessGame.GAME_STATE_END:
-                state = "GAME OVER";
-                // th = false;
-                // networkThread.stop();
-                gameOver = true;
-                break;
-            case ChessGame.GAME_STATE_WHITE:
-                state = "WHITE";
-                break;
-        }
-        return state;
+        if (chessGame.getGameState() != null)
+            return chessGame.getGameState().toString();
+        else
+            return "GAME OVER";
     }
 
     /**
@@ -430,9 +419,9 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         g.drawImage(this.imgBackground, 0, 0, null);
 
         if (this.opponentFound == false) {
-            g.setColor(Color.RED);
+            g.setColor(java.awt.Color.RED);
         } else {
-            g.setColor(Color.GREEN);
+            g.setColor(java.awt.Color.GREEN);
         }
         g.fillOval(15, 15, 30, 30);
 
@@ -448,7 +437,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     /**
      * @return current game state
      */
-    public int getGameState() {
+    public Color getGameState() {
         return this.chessGame.getGameState();
     }
 
@@ -534,9 +523,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
 
             if (mouseOverPiece(guiPiece, sx, sy)) {
 
-                if ((this.getGameState() == ChessGame.GAME_STATE_WHITE && guiPiece.getColor() == Color.WHITE)
-                        || (this.getGameState() == ChessGame.GAME_STATE_BLACK
-                        && guiPiece.getColor() == Color.BLACK)) {
+                if (this.getGameState() == guiPiece.getColor()) {
                     // calculate offset, because we do not want the drag piece
                     // to jump with it's upper left corner to the current mouse
                     // position
@@ -688,11 +675,11 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         // TODO Auto-generated method stub
         if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
             this.userName.setText("");
-            this.userName.setForeground(Color.BLACK);
+            this.userName.setForeground(java.awt.Color.BLACK);
         }
         if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
             this.opponent.setText("");
-            this.opponent.setForeground(Color.BLACK);
+            this.opponent.setForeground(java.awt.Color.BLACK);
         }
     }
 
@@ -701,8 +688,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     public void mouseEntered(MouseEvent e) {
         // TODO Auto-generated method stub
         if (e.getSource().equals(acceptCon) && (mousePressed == false)) {
-            acceptCon.setBackground(Color.GREEN);
-            acceptCon.setForeground(Color.WHITE);
+            acceptCon.setBackground(java.awt.Color.GREEN);
+            acceptCon.setForeground(java.awt.Color.WHITE);
 
         }
     }
@@ -711,8 +698,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     public void mouseExited(MouseEvent e) {
         // TODO Auto-generated method stub
         if (e.getSource().equals(acceptCon) && (mousePressed == false)) {
-            acceptCon.setBackground(Color.WHITE);
-            acceptCon.setForeground(Color.DARK_GRAY);
+            acceptCon.setBackground(java.awt.Color.WHITE);
+            acceptCon.setForeground(java.awt.Color.DARK_GRAY);
 
         }
     }
@@ -724,8 +711,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         // TODO Auto-generated method stub
         if (e.getSource().equals(acceptCon) && (mousePressed == true)) {
             System.out.println("acceptCon button pressed");
-            acceptCon.setBackground(Color.GREEN);
-            acceptCon.setForeground(Color.WHITE);
+            acceptCon.setBackground(java.awt.Color.GREEN);
+            acceptCon.setForeground(java.awt.Color.WHITE);
         }
     }
 
@@ -733,8 +720,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     public void mouseReleased(MouseEvent e) {
         // TODO Auto-generated method stub
         if (e.getSource().equals(acceptCon) && (mousePressed == true)) {
-            acceptCon.setBackground(Color.GREEN);
-            acceptCon.setForeground(Color.WHITE);
+            acceptCon.setBackground(java.awt.Color.GREEN);
+            acceptCon.setForeground(java.awt.Color.WHITE);
         }
     }
 

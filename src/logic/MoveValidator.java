@@ -1,9 +1,10 @@
 package logic;
 
+import enums.Color;
 import enums.Type;
 import gui.Piece;
 
-import java.awt.Color;
+import static enums.Color.WHITE;
 
 /**
  * @author Murat, Alex, Nikola and Ermin
@@ -33,8 +34,7 @@ public class MoveValidator {
         targetPiece = this.chessGame.getNonCapturedPieceAtLocation(targetRow, targetColumn);
 
         // source piece has right color?
-        if (!((sourcePiece.getColor() == Color.WHITE && this.chessGame.getGameState() == ChessGame.GAME_STATE_WHITE) ||
-                (sourcePiece.getColor() == Color.BLACK && this.chessGame.getGameState() == ChessGame.GAME_STATE_BLACK))) {
+        if (sourcePiece.getColor() != chessGame.getGameState()) {
             System.out.println("it's not your turn");
             return false;
         }
@@ -148,7 +148,7 @@ public class MoveValidator {
         int steps = sourceRow - targetRow;
         if (sourceColumn == targetColumn && isTargetLocationFree()) {
 
-            if (sourcePiece.getColor() == Color.WHITE) {
+            if (sourcePiece.getColor() == WHITE) {
                 if (steps == -1)
                     return true;
                 else if (steps == -2 && !sourcePiece.isTouched())
@@ -161,7 +161,7 @@ public class MoveValidator {
             }
         } else if (isTargetLocationCaptureable()) {
             if (Math.abs(sourceColumn - targetColumn) == 1)
-                if ((sourcePiece.getColor() == Color.WHITE && steps == -1) ||
+                if ((sourcePiece.getColor() == WHITE && steps == -1) ||
                         (sourcePiece.getColor() == Color.BLACK && steps == 1))
                     return true;
         } else
@@ -311,13 +311,12 @@ public class MoveValidator {
                                     Math.abs(king.getRow() - checkingPiece.getRow()) < 2 &&
                                     Math.abs(king.getColumn() - checkingPiece.getColumn()) < 2) ||
                             (checkingPiece.getType() == Type.Pawn &&
-                                    ((king.getColor() == Color.BLACK &&
-                                            checkingPiece.getColor() == Color.WHITE &&
-                                            checkingPiece.getRow() - king.getRow() == -1 &&
-                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1)) ||
-                                    (king.getColor() == Color.WHITE && checkingPiece.getColor() == Color.BLACK &&
-                                            checkingPiece.getRow() - king.getRow() == 1 &&
-                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1))))
+                                    (king.getColor() == checkingPiece.getColor().reverse() &&
+                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1 &&
+                                            ((checkingPiece.getColor() == WHITE &&
+                                                    checkingPiece.getRow() - king.getRow() == -1) ||
+                                                    (checkingPiece.getColor() == Color.BLACK &&
+                                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1))))))
                 return true;
         }
 
