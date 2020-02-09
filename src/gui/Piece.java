@@ -1,5 +1,9 @@
 package gui;
 
+import enums.Type;
+
+import java.awt.*;
+
 /**
  * 
  * @author Alex and Nikola
@@ -7,18 +11,10 @@ package gui;
  */
 public class Piece {
 
-	private int color;
-	public static final int COLOR_WHITE = 0;
-	public static final int COLOR_BLACK = 1;
+	private Color color;
 	
-	private int type;
-	public static final int TYPE_ROOK = 1;
-	public static final int TYPE_KNIGHT = 2;
-	public static final int TYPE_BISHOP = 3;
-	public static final int TYPE_QUEEN = 4;
-	public static final int TYPE_KING = 5;
-	public static final int TYPE_PAWN = 6;
-	
+	private Type type;
+
 	//Chess is played on a square board of
 	//eight rows (called ranks and denoted with numbers 1 to 8)
 	//and eight columns (called files and denoted with letters a to h) of squares.
@@ -45,9 +41,9 @@ public class Piece {
 	public static final int COLUMN_H = 7;
 	
 	private boolean isCaptured = false;
-	private boolean isTouched = true;
+	private boolean isTouched = false;
 
-	public Piece(int color, int type, int row, int column) {
+	public Piece(Color color, Type type, int row, int column) {
 		this.row = row;
 		this.column = column;
 		this.color = color;
@@ -70,13 +66,13 @@ public class Piece {
 		this.column = column;
 	}
 
-	public int getColor() {
+	public Color getColor() {
 		return this.color;
 	}
 	
 	@Override
 	public String toString() {
-		String strColor = (this.color==COLOR_WHITE?"white":"black");
+		String strColor = (this.color==Color.WHITE?"white":"black");
 
 		String strRow = getRowString(this.row);
 		String strColumn = getColumnString(this.column);
@@ -85,22 +81,22 @@ public class Piece {
 	}
 
 	public String getColorAndType() {
-		return (color == COLOR_WHITE ? "W" : "B") + getTypeString();
+		return (color == Color.WHITE ? "W" : "B") + getTypeString();
 	}
 
-	public int getType() {
+	public Type getType() {
 		return this.type;
 	}
 
 	public String getTypeString() {
 		String strType = "unknown";
 		switch (this.type) {
-			case TYPE_BISHOP: strType = "B";break;
-			case TYPE_KING: strType = "K";break;
-			case TYPE_KNIGHT: strType = "N";break;
-			case TYPE_PAWN: strType = "P";break;
-			case TYPE_QUEEN: strType = "Q";break;
-			case TYPE_ROOK: strType = "R";break;
+			case Bishop: strType = "B";break;
+			case King: strType = "K";break;
+			case Knight: strType = "N";break;
+			case Pawn: strType = "P";break;
+			case Queen: strType = "Q";break;
+			case Rook: strType = "R";break;
 		}
 		return strType;
 	}

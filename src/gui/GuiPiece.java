@@ -1,6 +1,6 @@
 package gui;
 
-import java.awt.Image;
+import java.awt.*;
 
 //Creates a chess piece and positions it on a specific row and colum
 /**
@@ -54,7 +54,7 @@ public class GuiPiece {
 	 * Returns color of the chess piece
 	 * @return int
 	 */
-	public int getColor() {
+	public Color getColor() {
 		return this.piece.getColor();
 	}
 	

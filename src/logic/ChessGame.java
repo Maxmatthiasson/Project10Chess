@@ -1,10 +1,12 @@
 package logic;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import enums.Type;
 import gui.Piece;
 
 /**
@@ -21,6 +23,7 @@ public class ChessGame {
     private boolean blackInCheck = false;
     private boolean whiteInMate = false;
     private boolean blackInMate = false;
+    private boolean castlingInProgress = false;
     private int moveCounter = 0;
 
 
@@ -36,6 +39,7 @@ public class ChessGame {
         startPositions();
     }
 
+    // A constructor for testing purposes, get any starting condition you need
     public ChessGame(LinkedList<Piece> pieces) {
         for (Piece p: pieces)
             createAndAddPiece(p.getColor(), p.getType(), p.getRow(), p.getColumn());
@@ -44,46 +48,46 @@ public class ChessGame {
     private void startPositions() {
         // create and place pieces
         // rook, knight, bishop, queen, king, bishop, knight, and rook
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_ROOK, Piece.ROW_1, Piece.COLUMN_A);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_KNIGHT, Piece.ROW_1,
+        createAndAddPiece(Color.WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_A);
+        createAndAddPiece(Color.WHITE, Type.Knight, Piece.ROW_1,
                 Piece.COLUMN_B);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_BISHOP, Piece.ROW_1,
+        createAndAddPiece(Color.WHITE, Type.Bishop, Piece.ROW_1,
                 Piece.COLUMN_C);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_QUEEN, Piece.ROW_1,
+        createAndAddPiece(Color.WHITE, Type.Queen, Piece.ROW_1,
                 Piece.COLUMN_D);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_KING, Piece.ROW_1, Piece.COLUMN_E);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_BISHOP, Piece.ROW_1,
+        createAndAddPiece(Color.WHITE, Type.King, Piece.ROW_1, Piece.COLUMN_E);
+        createAndAddPiece(Color.WHITE, Type.Bishop, Piece.ROW_1,
                 Piece.COLUMN_F);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_KNIGHT, Piece.ROW_1,
+        createAndAddPiece(Color.WHITE, Type.Knight, Piece.ROW_1,
                 Piece.COLUMN_G);
-        createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_ROOK, Piece.ROW_1, Piece.COLUMN_H);
+        createAndAddPiece(Color.WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_H);
 
         // pawns
         int currentColumn = Piece.COLUMN_A;
         for (int i = 0; i < 8; i++) {
-            createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_2,
+            createAndAddPiece(Color.WHITE, Type.Pawn, Piece.ROW_2,
                     currentColumn);
             currentColumn++;
         }
 
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_A);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_KNIGHT, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.Rook, Piece.ROW_8, Piece.COLUMN_A);
+        createAndAddPiece(Color.BLACK, Type.Knight, Piece.ROW_8,
                 Piece.COLUMN_B);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_BISHOP, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.Bishop, Piece.ROW_8,
                 Piece.COLUMN_C);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_QUEEN, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.Queen, Piece.ROW_8,
                 Piece.COLUMN_D);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_KING, Piece.ROW_8, Piece.COLUMN_E);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_BISHOP, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.King, Piece.ROW_8, Piece.COLUMN_E);
+        createAndAddPiece(Color.BLACK, Type.Bishop, Piece.ROW_8,
                 Piece.COLUMN_F);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_KNIGHT, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.Knight, Piece.ROW_8,
                 Piece.COLUMN_G);
-        createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_H);
+        createAndAddPiece(Color.BLACK, Type.Rook, Piece.ROW_8, Piece.COLUMN_H);
 
         // pawns
         currentColumn = Piece.COLUMN_A;
         for (int i = 0; i < 8; i++) {
-            createAndAddPiece(Piece.COLOR_BLACK, Piece.TYPE_PAWN, Piece.ROW_7,
+            createAndAddPiece(Color.BLACK, Type.Pawn, Piece.ROW_7,
                     currentColumn);
             currentColumn++;
         }
@@ -92,12 +96,12 @@ public class ChessGame {
     /**
      * create piece instance and add it to the internal list of pieces
      *
-     * @param color  on of Pieces.COLOR_..
-     * @param type   on of Pieces.TYPE_..
+     * @param color  on of Color..
+     * @param type   on of Type..
      * @param row    on of Pieces.ROW_..
      * @param column on of Pieces.COLUMN_..
      */
-    public void createAndAddPiece(int color, int type, int row, int column) {
+    public void createAndAddPiece(Color color, Type type, int row, int column) {
         Piece piece = new Piece(color, type, row, column);
         this.pieces.add(piece);
     }
@@ -118,6 +122,13 @@ public class ChessGame {
     public boolean movePiece(int sourceRow, int sourceColumn, int targetRow,
                              int targetColumn) {
         boolean resetCounter = false;
+        Piece piece = getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
+
+        // Does source piece exist
+        if (piece == null) {
+            System.out.println("no source piece");
+            return false;
+        }
 
         if (!this.moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow,
                 targetColumn)) {
@@ -125,33 +136,37 @@ public class ChessGame {
             return false;
         }
 
-        Piece piece = getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
+        Color opponentColor = (piece.getColor() == Color.BLACK ? Color.WHITE
+                : Color.BLACK);
+        if (!castlingInProgress) {
 
-        // check if the move is capturing an opponent piece
-        int opponentColor = (piece.getColor() == Piece.COLOR_BLACK ? Piece.COLOR_WHITE
-                : Piece.COLOR_BLACK);
-        if (isNonCapturedPieceAtLocation(opponentColor, targetRow, targetColumn)) {
-            Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
-            opponentPiece.isCaptured(true);
+
+            // check if the move is capturing an opponent piece
+            if (isNonCapturedPieceAtLocation(opponentColor, targetRow, targetColumn)) {
+                Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
+                opponentPiece.isCaptured(true);
+                resetCounter = true;
+            }
+
+
+            piece.setRow(targetRow);
+            piece.setColumn(targetColumn);
+
+            if (moveValidator.checkValidator(piece.getColor())) {
+                System.out.println("illegal move, puts king in check");
+                piece.setRow(sourceRow);
+                piece.setColumn(sourceColumn);
+                return false;
+            }
+
+            if (piece.getType() == Type.Pawn)
+                resetCounter = true;
+
+            piece.touch();
+        } else {
+            castlingInProgress = false;
             resetCounter = true;
         }
-
-
-        piece.setRow(targetRow);
-        piece.setColumn(targetColumn);
-
-        if (moveValidator.checkValidator(piece.getColor())) {
-            System.out.println("illegal move, puts king in check");
-            piece.setRow(sourceRow);
-            piece.setColumn(sourceColumn);
-            return false;
-        }
-
-        if (piece.getType() == Piece.TYPE_PAWN)
-            resetCounter = true;
-
-        piece.touch();
-
         if (resetCounter)
             moveCounter = 0;
         else
@@ -160,17 +175,17 @@ public class ChessGame {
         changeGameState();
 
         if (moveValidator.checkValidator(opponentColor))
-            if (opponentColor == Piece.COLOR_WHITE) {
+            if (opponentColor == Color.WHITE) {
                 System.out.println("White in check");
                 whiteInCheck = true;
-                if (mateValidator(Piece.COLOR_WHITE)) {
+                if (mateValidator(Color.WHITE)) {
                     System.out.println("White in checkmate");
                     whiteInMate = true;
                 }
             } else {
                 System.out.println("Black in check");
                 blackInCheck = true;
-                if (mateValidator(Piece.COLOR_BLACK)) {
+                if (mateValidator(Color.BLACK)) {
                     blackInMate = true;
                     System.out.println("Black in checkmate");
                 }
@@ -209,7 +224,7 @@ public class ChessGame {
      * @return true, if the location contains a not-captured piece of the
      * specified color
      */
-    private boolean isNonCapturedPieceAtLocation(int color, int row, int column) {
+    private boolean isNonCapturedPieceAtLocation(Color color, int row, int column) {
         for (Piece piece : this.pieces) {
             if (piece.getRow() == row && piece.getColumn() == column
                     && piece.isCaptured() == false && piece.getColor() == color) {
@@ -234,6 +249,10 @@ public class ChessGame {
             }
         }
         return false;
+    }
+
+    public void isCastling() {
+        castlingInProgress = true;
     }
 
     /**
@@ -285,35 +304,35 @@ public class ChessGame {
         }
     }
 
-    public boolean mateValidator(int color) {
+    public boolean mateValidator(Color color) {
         LinkedList<Move> validMoves = new LinkedList<>();
 
         for (Piece p : pieces) {
             if (p.getColor() == color && !p.isCaptured()) {
 
-                if (p.getType() == Piece.TYPE_PAWN) {
-                    int[] row = (color == Piece.COLOR_WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
+                if (p.getType() == Type.Pawn) {
+                    int[] row = (color == Color.WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
                     int[] col = {-1, 0, 1, 0};
                     for (int i = 0; i < row.length; i++) {
                         if ((i < 3 || !p.isTouched()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i])) {
                             validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i], p));
                         }
                     }
-                } else if (p.getType() == Piece.TYPE_KING) {
+                } else if (p.getType() == Type.King) {
                     for (int row = -1; row < 2; row++)
                         for (int col = -1; col < 2; col++) {
                             if (!(col == 0 && row == 0) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col)) {
                                 validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col, p));
                             }
                         }
-                } else if (p.getType() == Piece.TYPE_BISHOP || p.getType() == Piece.TYPE_ROOK || p.getType() == Piece.TYPE_QUEEN) {
+                } else if (p.getType() == Type.Bishop || p.getType() == Type.Rook || p.getType() == Type.Queen) {
                     int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook move (straight), 4-7: bishop move (diagonally)
                     int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
                     int begin = 0, end = 7;
 
-                    if (p.getType() == Piece.TYPE_ROOK)
+                    if (p.getType() == Type.Rook)
                         end = 3;
-                    else if (p.getType() == Piece.TYPE_BISHOP)
+                    else if (p.getType() == Type.Bishop)
                         begin = 4;
 
                     for (int i = begin; i <= end; i++) {
@@ -328,7 +347,7 @@ public class ChessGame {
                                 validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol, p));
                         } while (moveIsValid);
                     }
-                } else if (p.getType() == Piece.TYPE_KNIGHT) {
+                } else if (p.getType() == Type.Knight) {
                     int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
                     int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
 
@@ -384,5 +403,4 @@ public class ChessGame {
 
         return res.toString();
     }
-
 }
