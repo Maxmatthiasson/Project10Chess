@@ -10,7 +10,7 @@ import enums.Type;
  */
 public class Piece {
 
-	private Color color;
+	private final Color color;
 	
 	private Type type;
 
@@ -40,7 +40,7 @@ public class Piece {
 	public static final int COLUMN_H = 7;
 	
 	private boolean isCaptured = false;
-	private boolean isTouched = false;
+	private boolean onStartingPlace = true;
 
 	public Piece(Color color, Type type, int row, int column) {
 		this.row = row;
@@ -83,6 +83,8 @@ public class Piece {
 		return (color == Color.WHITE ? "W" : "B") + getTypeString();
 	}
 
+	public void setType(Type type) { this.type = type; }
+
 	public Type getType() {
 		return this.type;
 	}
@@ -90,12 +92,12 @@ public class Piece {
 	public String getTypeString() {
 		String strType = "unknown";
 		switch (this.type) {
-			case Bishop: strType = "B";break;
-			case King: strType = "K";break;
-			case Knight: strType = "N";break;
-			case Pawn: strType = "P";break;
-			case Queen: strType = "Q";break;
-			case Rook: strType = "R";break;
+			case BISHOP: strType = "B";break;
+			case KING: strType = "K";break;
+			case KNIGHT: strType = "N";break;
+			case PAWN: strType = "P";break;
+			case QUEEN: strType = "Q";break;
+			case ROOK: strType = "R";break;
 		}
 		return strType;
 	}
@@ -139,11 +141,11 @@ public class Piece {
 	}
 
 	public void touch() {
-		isTouched = true;
+		onStartingPlace = false;
 	}
 
-	public boolean isTouched() {
-		return isTouched;
+	public boolean onStartingPlace() {
+		return onStartingPlace;
 	}
 
 }

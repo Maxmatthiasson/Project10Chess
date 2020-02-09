@@ -10,9 +10,9 @@ import java.util.LinkedList;
 public class TestCheckMate {
     public static void main(String[] args) {
         LinkedList<Piece> pieces = new LinkedList<>();
-        pieces.add(new Piece(Color.BLACK, Type.King, Piece.ROW_8, Piece.COLUMN_G));
-        pieces.add(new Piece(Color.WHITE, Type.Queen, Piece.ROW_6, Piece.COLUMN_G));
-        pieces.add(new Piece(Color.WHITE, Type.King, Piece.ROW_6, Piece.COLUMN_F));
+        pieces.add(new Piece(Color.BLACK, Type.KING, Piece.ROW_8, Piece.COLUMN_G));
+        pieces.add(new Piece(Color.WHITE, Type.QUEEN, Piece.ROW_6, Piece.COLUMN_G));
+        pieces.add(new Piece(Color.WHITE, Type.KING, Piece.ROW_6, Piece.COLUMN_F));
         ChessGame cg = new ChessGame(pieces);
 
         System.out.println(cg.toString());

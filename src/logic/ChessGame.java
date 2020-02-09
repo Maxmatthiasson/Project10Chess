@@ -9,6 +9,8 @@ import enums.Color;
 import enums.Type;
 import gui.Piece;
 
+import javax.swing.*;
+
 import static enums.Color.WHITE;
 
 /**
@@ -50,46 +52,46 @@ public class ChessGame {
     private void startPositions() {
         // create and place pieces
         // rook, knight, bishop, queen, king, bishop, knight, and rook
-        createAndAddPiece(WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_A);
-        createAndAddPiece(WHITE, Type.Knight, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.ROOK, Piece.ROW_1, Piece.COLUMN_A);
+        createAndAddPiece(WHITE, Type.KNIGHT, Piece.ROW_1,
                 Piece.COLUMN_B);
-        createAndAddPiece(WHITE, Type.Bishop, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.BISHOP, Piece.ROW_1,
                 Piece.COLUMN_C);
-        createAndAddPiece(WHITE, Type.Queen, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.QUEEN, Piece.ROW_1,
                 Piece.COLUMN_D);
-        createAndAddPiece(WHITE, Type.King, Piece.ROW_1, Piece.COLUMN_E);
-        createAndAddPiece(WHITE, Type.Bishop, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.KING, Piece.ROW_1, Piece.COLUMN_E);
+        createAndAddPiece(WHITE, Type.BISHOP, Piece.ROW_1,
                 Piece.COLUMN_F);
-        createAndAddPiece(WHITE, Type.Knight, Piece.ROW_1,
+        createAndAddPiece(WHITE, Type.KNIGHT, Piece.ROW_1,
                 Piece.COLUMN_G);
-        createAndAddPiece(WHITE, Type.Rook, Piece.ROW_1, Piece.COLUMN_H);
+        createAndAddPiece(WHITE, Type.ROOK, Piece.ROW_1, Piece.COLUMN_H);
 
         // pawns
         int currentColumn = Piece.COLUMN_A;
         for (int i = 0; i < 8; i++) {
-            createAndAddPiece(WHITE, Type.Pawn, Piece.ROW_2,
+            createAndAddPiece(WHITE, Type.PAWN, Piece.ROW_2,
                     currentColumn);
             currentColumn++;
         }
 
-        createAndAddPiece(Color.BLACK, Type.Rook, Piece.ROW_8, Piece.COLUMN_A);
-        createAndAddPiece(Color.BLACK, Type.Knight, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.ROOK, Piece.ROW_8, Piece.COLUMN_A);
+        createAndAddPiece(Color.BLACK, Type.KNIGHT, Piece.ROW_8,
                 Piece.COLUMN_B);
-        createAndAddPiece(Color.BLACK, Type.Bishop, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.BISHOP, Piece.ROW_8,
                 Piece.COLUMN_C);
-        createAndAddPiece(Color.BLACK, Type.Queen, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.QUEEN, Piece.ROW_8,
                 Piece.COLUMN_D);
-        createAndAddPiece(Color.BLACK, Type.King, Piece.ROW_8, Piece.COLUMN_E);
-        createAndAddPiece(Color.BLACK, Type.Bishop, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.KING, Piece.ROW_8, Piece.COLUMN_E);
+        createAndAddPiece(Color.BLACK, Type.BISHOP, Piece.ROW_8,
                 Piece.COLUMN_F);
-        createAndAddPiece(Color.BLACK, Type.Knight, Piece.ROW_8,
+        createAndAddPiece(Color.BLACK, Type.KNIGHT, Piece.ROW_8,
                 Piece.COLUMN_G);
-        createAndAddPiece(Color.BLACK, Type.Rook, Piece.ROW_8, Piece.COLUMN_H);
+        createAndAddPiece(Color.BLACK, Type.ROOK, Piece.ROW_8, Piece.COLUMN_H);
 
         // pawns
         currentColumn = Piece.COLUMN_A;
         for (int i = 0; i < 8; i++) {
-            createAndAddPiece(Color.BLACK, Type.Pawn, Piece.ROW_7,
+            createAndAddPiece(Color.BLACK, Type.PAWN, Piece.ROW_7,
                     currentColumn);
             currentColumn++;
         }
@@ -161,8 +163,16 @@ public class ChessGame {
                 return false;
             }
 
-            if (piece.getType() == Type.Pawn)
+            if (piece.getType() == Type.PAWN) {
                 resetCounter = true;
+                if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
+                        (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
+                    String[] buttons = { "Queen", "Rook", "Bishop", "Knight", "Pawn" };
+                    int returnValue = JOptionPane.showOptionDialog(null, "Promote your pawn?", "Promotion",
+                            JOptionPane.DEFAULT_OPTION, 0, null, buttons, 1);
+                    piece.setType(Type.valueOf(buttons[returnValue].toUpperCase()));
+                }
+            }
 
             piece.touch();
         } else {
@@ -301,29 +311,29 @@ public class ChessGame {
         for (Piece p : pieces) {
             if (p.getColor() == color && !p.isCaptured()) {
 
-                if (p.getType() == Type.Pawn) {
+                if (p.getType() == Type.PAWN) {
                     int[] row = (color == WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
                     int[] col = {-1, 0, 1, 0};
                     for (int i = 0; i < row.length; i++) {
-                        if ((i < 3 || !p.isTouched()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i])) {
+                        if ((i < 3 || p.onStartingPlace()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i])) {
                             validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i], p));
                         }
                     }
-                } else if (p.getType() == Type.King) {
+                } else if (p.getType() == Type.KING) {
                     for (int row = -1; row < 2; row++)
                         for (int col = -1; col < 2; col++) {
                             if (!(col == 0 && row == 0) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col)) {
                                 validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col, p));
                             }
                         }
-                } else if (p.getType() == Type.Bishop || p.getType() == Type.Rook || p.getType() == Type.Queen) {
+                } else if (p.getType() == Type.BISHOP || p.getType() == Type.ROOK || p.getType() == Type.QUEEN) {
                     int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook move (straight), 4-7: bishop move (diagonally)
                     int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
                     int begin = 0, end = 7;
 
-                    if (p.getType() == Type.Rook)
+                    if (p.getType() == Type.ROOK)
                         end = 3;
-                    else if (p.getType() == Type.Bishop)
+                    else if (p.getType() == Type.BISHOP)
                         begin = 4;
 
                     for (int i = begin; i <= end; i++) {
@@ -338,7 +348,7 @@ public class ChessGame {
                                 validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol, p));
                         } while (moveIsValid);
                     }
-                } else if (p.getType() == Type.Knight) {
+                } else if (p.getType() == Type.KNIGHT) {
                     int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
                     int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
 

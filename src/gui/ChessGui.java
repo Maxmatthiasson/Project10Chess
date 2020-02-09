@@ -13,7 +13,6 @@ import java.util.List;
 import javax.swing.*;
 
 import enums.Color;
-import enums.Type;
 import online.ChessClient;
 import online.ChessServer;
 import logic.ChessGame;
@@ -25,9 +24,7 @@ import logic.PiecesDragAndDropListener;
  */
 
 /**
- *
  * @author Murat, Alex and Nikola
- *
  */
 public class ChessGui extends JLayeredPane implements Runnable, ActionListener, MouseListener {
 
@@ -373,45 +370,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
      * @param piece The Piece to add
      */
     private void createAndAddGuiPiece(Piece piece) {
-        Image img = this.getImageForPiece(piece.getColor(), piece.getType());
-        GuiPiece guiPiece = new GuiPiece(img, piece);
+        GuiPiece guiPiece = new GuiPiece(piece);
         this.guiPieces.add(guiPiece);
-    }
-
-    /**
-     * load image for given color and type. This method translates the color and
-     * type information into a filename and loads that particular file.
-     *
-     * @param color
-     *            color constant
-     * @param type
-     *            type constant
-     * @return image
-     */
-    private Image getImageForPiece(Color color, Type type) {
-
-        char chType = 'p';
-
-        switch (type) {
-            case Bishop:
-                chType = 'b';
-                break;
-            case King:
-                chType = 'k';
-                break;
-            case Knight:
-                chType = 'n';
-                break;
-            case Queen:
-                chType = 'q';
-                break;
-            case Rook:
-                chType = 'r';
-                break;
-        }
-
-        String urlPieceImg = "img/" + (color == Color.WHITE ? "w" : "b") + chType + ".png";
-        return new ImageIcon(urlPieceImg).getImage();
     }
 
     @Override
@@ -503,7 +463,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             System.out.println("moving piece to " + targetRow + "/" + targetColumn);
             this.chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
                     targetColumn);
-            for (GuiPiece g: guiPieces)
+            for (GuiPiece g : guiPieces)
                 g.resetToUnderlyingPiecePosition();
         }
     }
@@ -647,19 +607,15 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         //When button pressed restarts the game
         if (e.getSource().equals(newGame)) {
             messageBoard.setText(null);
-            if (isClient) {
+            if (isClient)
                 gc.sendCommand("####");
-                guiPieces.clear();
-                // create chess game
-                chessGame = new ChessGame();
-                gameOver = false;
-            } else {
+            else
                 gs.sendCommand("####");
-                guiPieces.clear();
-                // create chess game
-                chessGame = new ChessGame();
-                gameOver = false;
-            }
+
+            guiPieces.clear();
+            // create chess game
+            chessGame = new ChessGame();
+            gameOver = false;
 
             // wrap game pieces into their graphical representation
             for (Piece piece : chessGame.getPieces()) {
