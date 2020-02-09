@@ -202,7 +202,7 @@ public class ChessGame {
                 }
             }
 
-        for (Piece p: pieces)
+        for (Piece p : pieces)
             if (p.getType() == Type.PAWN && p.getColor() == gameState)
                 p.resetEnPassant();
 
@@ -217,12 +217,12 @@ public class ChessGame {
      *
      * @param row    one of Piece.ROW_..
      * @param column one of Piece.COLUMN_..
-     * @return the first not captured piece at the specified location
+     * @return the first not captured piece at the specified location (or a pawn ahead if it is in en passant)
      */
     public Piece getNonCapturedPieceAtLocation(int row, int column) {
         for (Piece piece : this.pieces) {
-            if (!piece.isCaptured() && (
-                    (piece.getRow() == row && piece.getColumn() == column) ||
+            if ((!piece.isCaptured() && piece.getColumn() == column) && (
+                    (piece.getRow() == row) ||
                             (piece.getType() == Type.PAWN && piece.isEnPassant() && (
                                     (piece.getColor() == Color.WHITE && piece.getRow() == row + 1 && piece.getRow() == Piece.ROW_4) ||
                                             (piece.getColor() == Color.BLACK && piece.getRow() == row - 1 && piece.getRow() == Piece.ROW_5)))))
@@ -317,13 +317,12 @@ public class ChessGame {
             if (p.getColor() == color && !p.isCaptured()) {
 
                 if (p.getType() == Type.PAWN) {
-                    int[] row = (color == Color.WHITE ? new int[]{-1, -1, -1 - 2} : new int[]{1, 1, 1, 2});
+                    int[] row = (color == Color.BLACK ? new int[]{-1, -1, -1, -2} : new int[]{1, 1, 1, 2});
                     int[] col = {-1, 0, 1, 0};
-                    for (int i = 0; i < row.length; i++) {
-                        if ((i < 3 || p.onStartingPlace()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i])) {
+                    for (int i = 0; i < row.length; i++)
+                        if ((i < 3 || p.onStartingPlace()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]))
                             validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i], p));
-                        }
-                    }
+
                 } else if (p.getType() == Type.KING) {
                     for (int row = -1; row < 2; row++)
                         for (int col = -1; col < 2; col++) {
