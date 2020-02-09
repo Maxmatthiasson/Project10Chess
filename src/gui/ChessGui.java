@@ -514,7 +514,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             System.out.println("moving piece to " + targetRow + "/" + targetColumn);
             this.chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
                     targetColumn);
-            dragPiece.resetToUnderlyingPiecePosition();
+            for (GuiPiece g: guiPieces)
+                g.resetToUnderlyingPiecePosition();
         }
     }
 
