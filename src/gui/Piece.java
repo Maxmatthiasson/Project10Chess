@@ -41,6 +41,15 @@ public class Piece {
 	
 	private boolean isCaptured = false;
 	private boolean onStartingPlace = true;
+	private boolean enPassant = false;
+
+	public boolean isEnPassant() {
+		return enPassant;
+	}
+
+	public void resetEnPassant() {
+		enPassant = false;
+	}
 
 	public Piece(Color color, Type type, int row, int column) {
 		this.row = row;
@@ -58,6 +67,8 @@ public class Piece {
 	}
 
 	public void setRow(int row) {
+		if (type == Type.PAWN && onStartingPlace && Math.abs(this.row - row) == 2)
+			enPassant = true;
 		this.row = row;
 	}
 

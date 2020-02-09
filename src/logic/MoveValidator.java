@@ -303,6 +303,8 @@ public class MoveValidator {
                 curRow += row[i];
                 curCol += col[i];
                 checkingPiece = chessGame.getNonCapturedPieceAtLocation(curRow, curCol);
+                if (checkingPiece != null && checkingPiece.getRow() != curRow) // Check for en passant
+                    checkingPiece = null;
             } while (checkingPiece == null && curRow > 0 && curRow < 7 && curCol > 0 && curCol < 7);
 
             if ((checkingPiece != null &&
