@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import enums.Color;
 import enums.Type;
@@ -44,8 +45,7 @@ public class ChessGame {
 
     // A constructor for testing purposes, get any starting condition you need
     public ChessGame(LinkedList<Piece> pieces) {
-        for (Piece p : pieces)
-            createAndAddPiece(p.getColor(), p.getType(), p.getRow(), p.getColumn());
+        this.pieces = pieces;
     }
 
     private void startPositions() {
@@ -133,7 +133,7 @@ public class ChessGame {
             return false;
         }
 
-        if (!this.moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow,
+        if (!moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow,
                 targetColumn)) {
             System.out.println("move invalid");
             return false;
@@ -185,26 +185,31 @@ public class ChessGame {
 
         changeGameState();
 
-        if (moveValidator.checkValidator(opponentColor))
+        if (moveValidator.checkValidator(opponentColor)) {
+            moveValidator.switchOutput();
             if (opponentColor == Color.WHITE) {
                 System.out.println("White in check");
                 whiteInCheck = true;
-                if (mateValidator(Color.WHITE)) {
+                if (moveValidator.mateValidator(pieces, Color.WHITE)) {
                     System.out.println("White in checkmate");
                     whiteInMate = true;
                 }
             } else {
                 System.out.println("Black in check");
                 blackInCheck = true;
-                if (mateValidator(Color.BLACK)) {
+                if (moveValidator.mateValidator(pieces, Color.BLACK)) {
                     blackInMate = true;
                     System.out.println("Black in checkmate");
                 }
             }
+            moveValidator.switchOutput();
+        }
 
-        for (Piece p : pieces)
-            if (p.getType() == Type.PAWN && p.getColor() == gameState)
-                p.resetEnPassant();
+        for (Piece p : pieces.stream().filter(p ->
+                p.getType() == Type.PAWN &&
+                        p.getColor() == gameState
+        ).collect(Collectors.toList()))
+            p.resetEnPassant();
 
         checkEndConditions();
 
@@ -259,9 +264,9 @@ public class ChessGame {
      * @return true, if the location contains a piece
      */
     public boolean isNonCapturedPieceAtLocation(int row, int column) {
-        for (Piece piece : this.pieces) {
+        for (Piece piece : pieces) {
             if (piece.getRow() == row && piece.getColumn() == column
-                    && piece.isCaptured() == false) {
+                    && !piece.isCaptured()) {
                 return true;
             }
         }
@@ -289,7 +294,7 @@ public class ChessGame {
     /**
      * switches the game state depending on the current board situation.
      */
-    public void changeGameState() {
+    private void changeGameState() {
         if (gameState != null)
             gameState = gameState.reverse();
     }
@@ -310,70 +315,13 @@ public class ChessGame {
         }
     }
 
-    public boolean mateValidator(Color color) {
-        LinkedList<Move> validMoves = new LinkedList<>();
-
-        for (Piece p : pieces) {
-            if (p.getColor() == color && !p.isCaptured()) {
-
-                if (p.getType() == Type.PAWN) {
-                    int[] row = (color == Color.BLACK ? new int[]{-1, -1, -1, -2} : new int[]{1, 1, 1, 2});
-                    int[] col = {-1, 0, 1, 0};
-                    for (int i = 0; i < row.length; i++)
-                        if ((i < 3 || p.onStartingPlace()) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]))
-                            validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i], p));
-
-                } else if (p.getType() == Type.KING) {
-                    for (int row = -1; row < 2; row++)
-                        for (int col = -1; col < 2; col++) {
-                            if (!(col == 0 && row == 0) && moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col)) {
-                                validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row, p.getColumn() + col, p));
-                            }
-                        }
-                } else if (p.getType() == Type.BISHOP || p.getType() == Type.ROOK || p.getType() == Type.QUEEN) {
-                    int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook move (straight), 4-7: bishop move (diagonally)
-                    int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
-                    int begin = 0, end = 7;
-
-                    if (p.getType() == Type.ROOK)
-                        end = 3;
-                    else if (p.getType() == Type.BISHOP)
-                        begin = 4;
-
-                    for (int i = begin; i <= end; i++) {
-                        int jumpRow = 0;
-                        int jumpCol = 0;
-                        boolean moveIsValid;
-                        do {
-                            jumpRow += row[i];
-                            jumpCol += col[i];
-                            moveIsValid = moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol);
-                            if (moveIsValid)
-                                validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol, p));
-                        } while (moveIsValid);
-                    }
-                } else if (p.getType() == Type.KNIGHT) {
-                    int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
-                    int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
-
-                    for (int i = 0; i < row.length; i++) {
-                        if (moveValidator.isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]))
-                            validMoves.add(new Move(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i], p));
-                    }
-                }
-            }
+    public boolean inCheck(Color color) {
+        switch (color) {
+            case WHITE:
+                return whiteInCheck;
+            default:
+                return blackInCheck;
         }
-        System.out.println("Valid moves: " + validMoves.size());
-        for (Move m : validMoves) {
-            m.piece.setRow(m.targetRow);
-            m.piece.setColumn(m.targetColumn);
-            boolean mate = moveValidator.checkValidator(color);
-            m.piece.setRow(m.sourceRow);
-            m.piece.setColumn(m.sourceColumn);
-            if (!mate)
-                return false;
-        }
-        return true;
     }
 
     public String toString() {

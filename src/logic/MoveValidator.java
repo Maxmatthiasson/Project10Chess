@@ -4,6 +4,8 @@ import enums.Color;
 import enums.Type;
 import gui.Piece;
 
+import java.util.List;
+
 /**
  * @author Murat, Alex, Nikola and Ermin
  */
@@ -12,6 +14,7 @@ public class MoveValidator {
     private ChessGame chessGame;
     private Piece sourcePiece;
     private Piece targetPiece;
+    private boolean output = true;
 
     public MoveValidator(ChessGame chessGame) {
         this.chessGame = chessGame;
@@ -28,6 +31,13 @@ public class MoveValidator {
      */
     public boolean isMoveValid(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
 
+        // check if target location within boundaries
+        if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8
+                || targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H) {
+            if (output)
+                System.out.println("target row or column out of scope");
+            return false;
+        }
         sourcePiece = chessGame.getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
         targetPiece = this.chessGame.getNonCapturedPieceAtLocation(targetRow, targetColumn);
 
@@ -37,20 +47,10 @@ public class MoveValidator {
             return false;
         }
 
-        // check if target location within boundaries
-        if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8
-                || targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H) {
-            System.out.println("target row or column out of scope");
-            return false;
-        }
-
         // target location possible?
-        if (!(isTargetLocationFree() || isTargetLocationCaptureable()) &&
-                !(sourcePiece.getType() == Type.KING &&  // Special conditions for castling
-                        targetPiece.getType() == Type.ROOK &&
-                        sourcePiece.getColor() == targetPiece.getColor() &&
-                        sourcePiece.onStartingPlace() && targetPiece.onStartingPlace())) {
-            System.out.println("target location not free and not captureable");
+        if (!(isTargetLocationFree() || isTargetLocationCaptureable() || isValidCastlingMove())) {
+            if (output)
+                System.out.println("target location not free and not captureable");
             return false;
         }
 
@@ -105,6 +105,25 @@ public class MoveValidator {
         return targetPiece == null;
     }
 
+    private boolean isValidCastlingMove() {
+        return (targetPiece != null &&
+                sourcePiece.getType() == Type.KING &&
+                targetPiece.getType() == Type.ROOK &&
+                sourcePiece.getColor() == targetPiece.getColor() &&
+                sourcePiece.onStartingPlace() &&
+                targetPiece.onStartingPlace() &&
+                sourcePiece.getColumn() == Piece.COLUMN_E &&
+                (targetPiece.getColumn() == Piece.COLUMN_A || targetPiece.getColumn() == Piece.COLUMN_H) &&
+                ((sourcePiece.getColor() == Color.WHITE &&
+                        sourcePiece.getRow() == Piece.ROW_1 &&
+                        targetPiece.getRow() == Piece.ROW_1 &&
+                        !chessGame.inCheck(Color.WHITE)) ||
+                        (sourcePiece.getColor() == Color.BLACK &&
+                                sourcePiece.getRow() == Piece.ROW_8 &&
+                                targetPiece.getRow() == Piece.ROW_8 &&
+                                !chessGame.inCheck(Color.BLACK))));
+    }
+
     private boolean isValidBishopMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
         //The bishop can move any number of squares diagonally, but may not leap
         //over other pieces.
@@ -119,9 +138,8 @@ public class MoveValidator {
 
         } else {
             // not moving diagonally
-            System.out.println(diffRow);
-            System.out.println(diffColumn);
-            System.out.println("not moving diagonally");
+            if (sourcePiece.getType() != Type.QUEEN)
+                System.out.println("not moving diagonally");
             isValid = false;
         }
         return isValid;
@@ -251,7 +269,8 @@ public class MoveValidator {
 
         } else {
             // not moving diagonally
-            System.out.println("not moving straight");
+            if (sourcePiece.getType() != Type.QUEEN)
+                System.out.println("not moving straight");
             return false;
         }
     }
@@ -303,20 +322,20 @@ public class MoveValidator {
                 curRow += row[i];
                 curCol += col[i];
                 checkingPiece = chessGame.getNonCapturedPieceAtLocation(curRow, curCol);
-                if (checkingPiece != null && checkingPiece.getRow() != curRow) // Check for en passant
+
+                // Check for en passant
+                if (checkingPiece != null && checkingPiece.getRow() != curRow)
                     checkingPiece = null;
             } while (checkingPiece == null && curRow > 0 && curRow < 7 && curCol > 0 && curCol < 7);
 
-            if ((checkingPiece != null &&
-                    checkingPiece.getColor() != king.getColor()) &&
+            if ((checkingPiece != null && checkingPiece.getColor() != king.getColor()) &&
                     (checkingPiece.getType() == Type.QUEEN ||
                             checkingPiece.getType() == Type.BISHOP ||
                             (checkingPiece.getType() == Type.KING &&
                                     Math.abs(king.getRow() - checkingPiece.getRow()) < 2 &&
                                     Math.abs(king.getColumn() - checkingPiece.getColumn()) < 2) ||
                             (checkingPiece.getType() == Type.PAWN &&
-                                    (king.getColor() == checkingPiece.getColor().reverse() &&
-                                            Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1 &&
+                                    (Math.abs(checkingPiece.getColumn() - king.getColumn()) == 1 &&
                                             ((checkingPiece.getColor() == Color.WHITE &&
                                                     checkingPiece.getRow() - king.getRow() == -1) ||
                                                     (checkingPiece.getColor() == Color.BLACK &&
@@ -335,6 +354,10 @@ public class MoveValidator {
                 curRow += row[i];
                 curCol += col[i];
                 checkingPiece = chessGame.getNonCapturedPieceAtLocation(curRow, curCol);
+
+                // Check for en passant
+                if (checkingPiece != null && checkingPiece.getRow() != curRow)
+                    checkingPiece = null;
             } while (checkingPiece == null && curRow > 0 && curRow < 7 && curCol > 0 && curCol < 7);
 
             if ((checkingPiece != null &&
@@ -358,5 +381,81 @@ public class MoveValidator {
         }
 
         return false;
+    }
+
+    public boolean mateValidator(List<Piece> pieces, Color color) {
+        for (Piece p : pieces) {
+            if (p.getColor() == color && !p.isCaptured()) {
+
+                if (p.getType() == Type.PAWN) {
+                    int[] row = (color == Color.BLACK ? new int[]{-1, -1, -1, -2} : new int[]{1, 1, 1, 2});
+                    int[] col = {-1, 0, 1, 0};
+                    for (int i = 0; i < row.length; i++)
+                        if ((i < 3 || p.onStartingPlace()) && isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]) &&
+                                !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
+                            return false;
+
+                } else if (p.getType() == Type.KING) {
+                    for (int row = Math.max(p.getRow() - 1, Piece.ROW_1); row <= Math.min(p.getRow() + 1, Piece.ROW_8); row++)
+                        for (int col = Math.max(p.getColumn() - 1, Piece.COLUMN_A); col <= Math.min(p.getColumn() + 1, Piece.COLUMN_H); col++) {
+                            if (!(row == p.getRow() && col == p.getColumn()) &&
+                                    isMoveValid(p.getRow(), p.getColumn(), row, col) &&
+                                    !testMoveForCheck(p, row, col))
+                                return false;
+                        }
+                } else if (p.getType() == Type.BISHOP || p.getType() == Type.ROOK || p.getType() == Type.QUEEN) {
+                    int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook move (straight), 4-7: bishop move (diagonally)
+                    int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
+                    int begin = 0, end = 7;
+
+                    if (p.getType() == Type.ROOK)
+                        end = 3;
+                    else if (p.getType() == Type.BISHOP)
+                        begin = 4;
+
+                    for (int i = begin; i <= end; i++) {
+                        int jumpRow = 0;
+                        int jumpCol = 0;
+                        boolean moveIsValid;
+                        do {
+                            jumpRow += row[i];
+                            jumpCol += col[i];
+                            moveIsValid = isMoveValid(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol);
+                            if (moveIsValid &&
+                                    !testMoveForCheck(p, p.getRow() + jumpRow, p.getColumn() + jumpCol))
+                                return false;
+                        } while (moveIsValid);
+                    }
+                } else if (p.getType() == Type.KNIGHT) {
+                    int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
+                    int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
+
+                    for (int i = 0; i < row.length; i++) {
+                        if (isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]) &&
+                                !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
+                            return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean testMoveForCheck(Piece piece, int targetRow, int targetColumn) {
+        int sourceRow = piece.getRow(), sourceColumn = piece.getColumn();
+        piece.setRow(targetRow);
+        piece.setColumn(targetColumn);
+        boolean mate = checkValidator(piece.getColor());
+        piece.setRow(sourceRow);
+        piece.setColumn(sourceColumn);
+        return mate;
+    }
+
+    /**
+     * Method for switching off console output, so the player won't see all the failed tries the computer does
+     * when trying to find out if a player is in checkmate
+     */
+    public void switchOutput() {
+        output = !output;
     }
 }
