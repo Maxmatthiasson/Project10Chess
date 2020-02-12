@@ -84,6 +84,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private List<GuiPiece> guiPieces = new ArrayList<>();
     private PiecesDragAndDropListener listener;
 
+    private Color myColor;
+
     public ChessGui() throws IOException {
         this.setLayout(null);
 
@@ -119,7 +121,10 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.acceptConnect();
         this.yourIP();
         this.applicationFrame();
+    }
 
+    public Color getColor() {
+        return this.myColor;
     }
 
     public void gameState() {
@@ -277,6 +282,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         if (gc.connect(ip)) {
             // we will act as client
             this.opponentFound = true;
+            this.myColor = Color.BLACK;
             // chessGame.gameState = ChessGame.GAME_STATE_WHITE;
             repaint();
         } else {
@@ -284,6 +290,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             // chessGame.gameState = ChessGame.GAME_STATE_BLACK;
             isClient = false;
             gs = new ChessServer();
+            this.myColor = Color.WHITE;
             this.opponentFound = false;
         }
         networkThread = new Thread(this);
