@@ -50,7 +50,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 
 			if(ChessGui.mouseOverPiece(guiPiece,x,y)){
 				
-				if (this.chessGui.getGameState() == guiPiece.getColor()){
+				if (this.chessGui.getGameState() == guiPiece.getColor() && this.chessGui.getColor() == guiPiece.getColor()){
 					// calculate offset, because we do not want the drag piece
 					// to jump with it's upper left corner to the current mouse
 					// position
