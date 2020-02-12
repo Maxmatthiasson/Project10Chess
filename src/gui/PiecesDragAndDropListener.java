@@ -1,12 +1,9 @@
-package logic;
+package gui;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.List;
-
-import gui.ChessGui;
-import gui.GuiPiece;
 
 /**
  * 
@@ -19,8 +16,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 	private ChessGui chessGui;
 	
 	private GuiPiece dragPiece;
-	@SuppressWarnings("unused")
-	private int dragPieceI,sx,sy;
+	private int sx,sy;
 	private int dragOffsetX;
 	private int dragOffsetY;
 	
@@ -50,10 +46,9 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		//
 		for (int i = this.guiPieces.size()-1; i >= 0; i--) {
 			GuiPiece guiPiece = this.guiPieces.get(i);
-			dragPieceI = i;
 			if (guiPiece.isCaptured()) continue;
 
-			if(mouseOverPiece(guiPiece,x,y)){
+			if(ChessGui.mouseOverPiece(guiPiece,x,y)){
 				
 				if (this.chessGui.getGameState() == guiPiece.getColor()){
 					// calculate offset, because we do not want the drag piece
@@ -77,21 +72,6 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		}
 	}
 
-	/**
-	 * check whether the mouse is currently over this piece
-	 * @param guiPiece the playing piece
-	 * @param x x coordinate of mouse
-	 * @param y y coordinate of mouse
-	 * @return true if mouse is over the piece
-	 */
-	private boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
-
-		return guiPiece.getX() <= x 
-			&& guiPiece.getX()+guiPiece.getWidth() >= x
-			&& guiPiece.getY() <= y
-			&& guiPiece.getY()+guiPiece.getHeight() >= y;
-	}
-
 	@Override
 	public void mouseReleased(MouseEvent evt) {
 		if( this.dragPiece != null){
@@ -102,6 +82,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 			//
 			chessGui.setNewPieceLocation(this.dragPiece, x, y);
 			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + dragPiece.getX() + "-" +  dragPiece.getY() + "-" + x + "-" + y);
+			System.out.println("sx:\t" + sx + "\tsy:\t" + sy + "\nx:\t" + x + "\ty:\t" + y + "\ndX:\t" + dragPiece.getX() + "\tdY:\t" + dragPiece.getY());
 			this.chessGui.repaint();
 			this.dragPiece = null;
 		}
@@ -123,10 +104,8 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 			
 			this.chessGui.repaint();
 		}
-		
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent arg0) {}
-
 }

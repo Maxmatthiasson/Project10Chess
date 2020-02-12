@@ -14,9 +14,9 @@ import javax.swing.*;
 
 import enums.Color;
 import online.ChessClient;
+import online.ChessPlayer;
 import online.ChessServer;
 import logic.ChessGame;
-import logic.PiecesDragAndDropListener;
 
 /**
  * all x and y coordinates point to the upper left position of a component all
@@ -76,8 +76,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private boolean opponentFound = false, isClient = true, connected = false, th;
     private boolean click = false;
 
-    private ChessClient gc;
-    private ChessServer gs;
+    private ChessPlayer player;
     private Thread networkThread;
 
     private ChessGame chessGame;
@@ -123,10 +122,10 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     }
 
     public void gameState() {
-        String labelText = this.getGameStateAsText();
+        String labelText = chessGame.getGameStateAsText();
         this.lblGameState = new JLabel(labelText);
         lblGameState.setBounds(100, 240, 200, 100);
-        lblGameState.setFont(new Font("Verdana", Font.BOLD, 30));
+        lblGameState.setFont(new Font("Verdana", Font.BOLD, 15));
         lblGameState.setForeground(java.awt.Color.WHITE);
         this.add(lblGameState);
     }
@@ -273,8 +272,8 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         gameOn.setText("Searching for Opponent ");
         connected = false;
 
-        gc = new ChessClient();
-        if (gc.connect(ip)) {
+        player = new ChessClient();
+        if (((ChessClient) player).connect(ip)) {
             // we will act as client
             this.opponentFound = true;
             // chessGame.gameState = ChessGame.GAME_STATE_WHITE;
@@ -282,8 +281,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         } else {
             // we will be a server waiting for a client
             // chessGame.gameState = ChessGame.GAME_STATE_BLACK;
-            isClient = false;
-            gs = new ChessServer();
+            player = new ChessServer();
             this.opponentFound = false;
         }
         networkThread = new Thread(this);
@@ -291,36 +289,26 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     }
 
     public void sendMove(String move) {
-
-        if (isClient) {
-            gc.sendCommand(move);
-        } else {
-            gs.sendCommand(move);
-        }
+        player.sendCommand(move);
     }
 
     public void run() {
         String line;
-        if (isClient)
+        if (player instanceof ChessClient)
             this.opponentFound = true;
         gameOn.setText("Opponent found ");
         th = true;
         while (th) {
-            if (isClient) {
-                // act as client
-                line = gc.getCommand();
-            } else {
-                // act as server
-                if (!connected) {
-                    System.out.println("Waiting for client");
-                    gs.waitForClient();
-                    connected = true;
-                    opponentFound = true;
-                    repaint();
-                    gameOn.setText("Opponent found ");
-                }
-                line = gs.getCommand();
+            if (player instanceof ChessServer && !connected) {
+                System.out.println("Waiting for client");
+                ((ChessServer) player).waitForClient();
+                connected = true;
+                opponentFound = true;
+                repaint();
+                gameOn.setText("Opponent found ");
             }
+
+            line = player.getCommand();
             process(line);
             line = null;
         }
@@ -357,12 +345,12 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     /**
      * @return textual description of current game state
      */
-    private String getGameStateAsText() {
+    /*private String getGameStateAsText() {
         if (chessGame.getGameState() != null)
             return chessGame.getGameState().toString();
         else
             return "GAME OVER";
-    }
+    }*/
 
     /**
      * create a game piece
@@ -391,7 +379,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             }
         }
 
-        this.lblGameState.setText(this.getGameStateAsText());
+        this.lblGameState.setText(chessGame.getGameStateAsText());
     }
 
     /**
@@ -453,11 +441,10 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         int targetRow = ChessGui.convertYToRow(y);
         int targetColumn = ChessGui.convertXToColumn(x);
 
-        if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8 || targetColumn < Piece.COLUMN_A
-                || targetColumn > Piece.COLUMN_H) {
+        if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8 || targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H ||
+                (dragPiece.getPiece().getRow() == targetRow && dragPiece.getPiece().getColumn() == targetColumn)) {
             // reset piece position if move is not valid
             dragPiece.resetToUnderlyingPiecePosition();
-
         } else {
             // change model and update gui piece afterwards
             System.out.println("moving piece to " + targetRow + "/" + targetColumn);
@@ -483,7 +470,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
 
             if (mouseOverPiece(guiPiece, sx, sy)) {
 
-                if (this.getGameState() == guiPiece.getColor()) {
+                if (chessGame.getGameState() == guiPiece.getColor()) {
                     // calculate offset, because we do not want the drag piece
                     // to jump with it's upper left corner to the current mouse
                     // position
@@ -519,7 +506,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         }
     }
 
-    private boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
+    public static boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
 
         return guiPiece.getX() <= x && guiPiece.getX() + guiPiece.getWidth() >= x && guiPiece.getY() <= y
                 && guiPiece.getY() + guiPiece.getHeight() >= y;
@@ -589,28 +576,19 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         //When button pressed sends message
         if (e.getSource().equals(send)) {
             String pMessage = user + ": " + messageField.getText();
-            String oMessage = user + ": " + messageField.getText();
             messageField.setText(""); //Removes text in the messageField after sending a message.
 
-            if (isClient) {
+            if (player instanceof ChessClient || player instanceof ChessServer && connected) {
                 // act as client
-                gc.sendCommand("MESSAGE" + pMessage);
+                player.sendCommand("MESSAGE" + pMessage);
                 messageBoard.append(pMessage + "\n");
-
-            } else if (connected) {
-                // act as server
-                gs.sendCommand("MESSAGE" + oMessage);
-                messageBoard.append(oMessage + "\n");
             }
         }
 
         //When button pressed restarts the game
         if (e.getSource().equals(newGame)) {
             messageBoard.setText(null);
-            if (isClient)
-                gc.sendCommand("####");
-            else
-                gs.sendCommand("####");
+            player.sendCommand("####");
 
             guiPieces.clear();
             // create chess game
