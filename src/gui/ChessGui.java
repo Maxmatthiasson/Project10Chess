@@ -1,10 +1,7 @@
 package gui;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -26,7 +23,7 @@ import logic.ChessGame;
 /**
  * @author Murat, Alex and Nikola
  */
-public class ChessGui extends JLayeredPane implements Runnable, ActionListener, MouseListener {
+public class ChessGui extends JLayeredPane implements Runnable, ActionListener, MouseListener, FocusListener, KeyListener {
 
     private static final long serialVersionUID = -8207574964820892354L;
 
@@ -75,6 +72,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private boolean serverMode = false;
     private boolean opponentFound = false, connected = false, th;
     private boolean click = false;
+    private boolean msgFocus = false;
 
     private ChessPlayer player;
     private Thread networkThread;
@@ -102,6 +100,9 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         // add listeners to enable drag and drop
         //
         listener = new PiecesDragAndDropListener(this.guiPieces, this);
+
+        // add keylistener to enable keyboard commands
+
 
         // label to display game state
         this.gameState();
@@ -169,6 +170,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         this.messageField = new JTextField();
         messageField.setBounds(50, 690, 580, 50);
         messageField.setFont(messageFont);
+        messageField.addKeyListener(this);
         this.add(messageField);
     }
 
@@ -236,7 +238,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         userName.setFont(messageFont);
         userName.setForeground(color);
         userName.setText("Username");
-        userName.addMouseListener(this);
+        userName.addFocusListener(this);
         this.add(userName, 3, 0); //JTextField dissapears when changing constarint to 2.
     }
 
@@ -247,7 +249,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         opponent.setFont(messageFont);
         opponent.setForeground(color);
         opponent.setText("IP-Address");
-        opponent.addMouseListener(this);
+        opponent.addFocusListener(this);
         this.add(opponent, 3, 0);
     }
 
@@ -615,14 +617,14 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     @Override
     public void mouseClicked(MouseEvent e) {
         // TODO Auto-generated method stub
-        if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
-            this.userName.setText("");
-            this.userName.setForeground(java.awt.Color.BLACK);
-        }
-        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
-            this.opponent.setText("");
-            this.opponent.setForeground(java.awt.Color.BLACK);
-        }
+//        if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
+//            this.userName.setText("");
+//            this.userName.setForeground(java.awt.Color.BLACK);
+//        }
+//        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
+//            this.opponent.setText("");
+//            this.opponent.setForeground(java.awt.Color.BLACK);
+//        }
     }
 
     //mouseEntered and mouseExited are used for hover affect
@@ -672,4 +674,47 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     public static void main(String[] args) throws IOException {
         new ChessGui();
     }
+
+    @Override
+    public void focusGained(FocusEvent e) {
+        if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
+            this.userName.setText("");
+            this.userName.setForeground(java.awt.Color.BLACK);
+        }
+        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
+            this.opponent.setText("");
+            this.opponent.setForeground(java.awt.Color.BLACK);
+        }
+        if(e.getSource().equals(messageField)) {
+            msgFocus = true;
+        }
+    }
+
+    @Override
+    public void focusLost(FocusEvent e) {
+        if(e.getSource().equals(messageField)) {
+            msgFocus = false;
+        }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+            System.out.println("Enter Typed");
+            String pMessage = user + ": " + messageField.getText();
+            messageField.setText(""); //Removes text in the messageField after sending a message.
+
+            if (player instanceof ChessClient || player instanceof ChessServer && connected) {
+                // act as client
+                player.sendCommand("MESSAGE" + pMessage);
+                messageBoard.append(pMessage + "\n");
+            }
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
 }
