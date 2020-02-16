@@ -1,12 +1,25 @@
 package online;
 
+import enums.Color;
+
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 
 public abstract class ChessPlayer {
 
+    //Listens to port 9001
+    static final int PORT = 9001;
     BufferedReader input;
     PrintWriter output;
+    Color color;
+
+    ChessPlayer(Color color) {
+        this.color = color;
+    }
+
+    public Color getColor() {
+        return color;
+    }
 
     //Read message/command from client
     public String getCommand() {
