@@ -348,16 +348,6 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     }
 
     /**
-     * @return textual description of current game state
-     */
-    /*private String getGameStateAsText() {
-        if (chessGame.getGameState() != null)
-            return chessGame.getGameState().toString();
-        else
-            return "GAME OVER";
-    }*/
-
-    /**
      * create a game piece
      *
      * @param piece The Piece to add
@@ -475,25 +465,6 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         }
 
         setNewPieceLocation(dragPiece, targetX, targetY);
-        /*
-        dragPiece.setX(targetX);
-        dragPiece.setY(targetY);
-
-        int targetRow = ChessGui.convertYToRow(targetY); //y);
-        int targetColumn = ChessGui.convertXToColumn(targetX); //x);
-
-        if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8 || targetColumn < Piece.COLUMN_A
-                || targetColumn > Piece.COLUMN_H) {
-            // reset piece position if move is not valid
-            dragPiece.resetToUnderlyingPiecePosition();
-
-        } else {
-            // change model and update gui piece afterwards
-            System.out.println("moving piece to " + targetRow + "/" + targetColumn);
-            this.chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
-                    targetColumn);
-            dragPiece.resetToUnderlyingPiecePosition();
-        }*/
     }
 
     public static boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
@@ -514,16 +485,16 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             click = false;
         }
 
-        //When button pressed removes start screan and its components and initiate the game
+        //When button pressed removes start screen and its components and initiate the game
         if (e.getSource().equals(logIn)) {
             if (userName.getText().length() > 3 && !"IP-Address".equals(this.opponent.getText())) {
-                int lenght = opponent.getText().length();
+                int length = opponent.getText().length();
                 String ip = this.opponent.getText();
-                if (gameOver == false) {
+                if (!gameOver) {
                     this.addMouseListener(listener);
                     this.addMouseMotionListener(listener);
                 }
-                if (serverMode == false && !"Server Mode".equals(this.opponent.getText()) && lenght > 5) {
+                if (!serverMode && !"Server Mode".equals(this.opponent.getText()) && length > 5) {
                     init(ip);
                     System.out.println(ip);
                     this.userName.setVisible(false);
@@ -534,7 +505,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
                     this.opponent.setVisible(false);
                     this.acceptCon.setVisible(false);
                     this.acceptCon.setEnabled(false);
-                } else if (serverMode == true && "Server Mode".equals(this.opponent.getText())) {
+                } else if (serverMode && "Server Mode".equals(this.opponent.getText())) {
                     this.userName.setVisible(false);
                     this.user = userName.getText();
                     this.startScreen.setVisible(false);
@@ -549,14 +520,14 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         }
 
         //When button pressed and specific conditionds are true makes you to server and waits for connection
-        if (e.getSource().equals(acceptCon) && (this.mousePressed == false)) {
+        if (e.getSource().equals(acceptCon) && (!mousePressed)) {
             if (userName.getText().length() > 3
                     && (this.opponent.getText().length() == 0 || "IP-Address".equals(this.opponent.getText()))) {
                 this.opponent.setEditable(false);
                 this.opponent.setText("Server Mode");
                 this.serverMode = true;
                 this.mousePressed = true;
-                if (this.serverMode == true) {
+                if (serverMode) {
                     init(yourIP);
                     System.out.println(yourIP);
                 }

@@ -148,10 +148,11 @@ public class ChessGame {
                     opponentPiece.isCaptured(false);
                 return false;
             } else
-                check = null;
+                check = null; // If a move was successful, player isn't in check any more
 
             if (piece.getType() == Type.PAWN) {
                 resetCounter = true;
+                // Check for promotion
                 if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
                         (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
                     String[] buttons = {"Queen", "Rook", "Bishop", "Knight", "Pawn"};
@@ -175,7 +176,7 @@ public class ChessGame {
 
         if (moveValidator.checkValidator(opponentColor)) {
             // stopping the console from being flooded by all the faulty
-            // moves the computer makes while trying to test checkmate
+            // moves the computer tries to make while trying to test checkmate
             moveValidator.switchOutput();
             check = opponentColor;
             System.out.println(check.toString() + " in check");
@@ -183,6 +184,7 @@ public class ChessGame {
                 mate = opponentColor;
                 System.out.println(mate + " in checkmate");
             }
+            // Turn the console output on again
             moveValidator.switchOutput();
         }
 
@@ -212,26 +214,6 @@ public class ChessGame {
                 return piece;
         }
         return null;
-    }
-
-    /**
-     * Checks whether there is a piece at the specified location that is not
-     * marked as 'captured' and has the specified color.
-     *
-     * @param color  one of Piece.COLOR_..
-     * @param row    one of Piece.ROW_..
-     * @param column on of Piece.COLUMN_..
-     * @return true, if the location contains a not-captured piece of the
-     * specified color
-     */
-    private boolean isNonCapturedPieceAtLocation(Color color, int row, int column) {
-        for (Piece piece : this.pieces) {
-            if (piece.getRow() == row && piece.getColumn() == column
-                    && piece.isCaptured() == false && piece.getColor() == color) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
