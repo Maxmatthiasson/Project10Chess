@@ -342,7 +342,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             line = command.substring(4);
             toks = line.split("-");
             setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
-                    Integer.parseInt(toks[3]), Integer.parseInt(toks[4]), Integer.parseInt(toks[5]));
+                    Integer.parseInt(toks[3]));
             repaint();
         }
     }
@@ -460,42 +460,27 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         }
     }
 
-    public void setNewPieceLocationN(int sx, int sy, int setX, int setY, int x, int y) {
-        // if(i < guiPieces.size()/2)
-        // i += guiPieces.size()/2;
-        // else
-        // i -= guiPieces.size()/2;
-        // System.out.println(guiPieces.size() + " and " + i);
+    public void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
 
         GuiPiece dragPiece = null;
-        for (int i = this.guiPieces.size() - 1; i >= 0; i--) {
+        for (int i = this.guiPieces.size() - 1; i >= 0 && dragPiece == null; i--) {
             GuiPiece guiPiece = this.guiPieces.get(i);
-            if (guiPiece.isCaptured())
-                continue;
-
-            if (mouseOverPiece(guiPiece, sx, sy)) {
-
-                if (chessGame.getGameState() == guiPiece.getColor()) {
-                    // calculate offset, because we do not want the drag piece
-                    // to jump with it's upper left corner to the current mouse
-                    // position
-                    //
-                    dragPiece = guiPiece;
-                    break;
-                }
-            }
+            if (mouseOverPiece(guiPiece, sourceX, sourceY))
+                dragPiece = guiPiece;
         }
-
         // move drag piece to the top of the list
         if (dragPiece != null) {
             this.guiPieces.remove(dragPiece);
             this.guiPieces.add(dragPiece);
         }
-        dragPiece.setX(setX);
-        dragPiece.setY(setY);
 
-        int targetRow = ChessGui.convertYToRow(y);
-        int targetColumn = ChessGui.convertXToColumn(x);
+        setNewPieceLocation(dragPiece, targetX, targetY);
+        /*
+        dragPiece.setX(targetX);
+        dragPiece.setY(targetY);
+
+        int targetRow = ChessGui.convertYToRow(targetY); //y);
+        int targetColumn = ChessGui.convertXToColumn(targetX); //x);
 
         if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8 || targetColumn < Piece.COLUMN_A
                 || targetColumn > Piece.COLUMN_H) {
@@ -508,7 +493,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
             this.chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
                     targetColumn);
             dragPiece.resetToUnderlyingPiecePosition();
-        }
+        }*/
     }
 
     public static boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {

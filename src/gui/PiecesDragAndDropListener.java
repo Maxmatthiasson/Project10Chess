@@ -81,7 +81,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 			// set game piece to the new location if possible
 			//
 			chessGui.setNewPieceLocation(this.dragPiece, x, y);
-			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + dragPiece.getX() + "-" +  dragPiece.getY() + "-" + x + "-" + y);
+			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + dragPiece.getX() + "-" +  dragPiece.getY()); // + "-" + x + "-" + y);
 			System.out.println("sx:\t" + sx + "\tsy:\t" + sy + "\nx:\t" + x + "\ty:\t" + y + "\ndX:\t" + dragPiece.getX() + "\tdY:\t" + dragPiece.getY());
 			this.chessGui.repaint();
 			this.dragPiece = null;
