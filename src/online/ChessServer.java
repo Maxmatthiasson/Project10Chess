@@ -1,5 +1,7 @@
 package online;
 
+import enums.Color;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -11,11 +13,11 @@ import java.net.Socket;
  */
 public class ChessServer extends ChessPlayer {
 
-    private static final int PORT = 9001;
     private ServerSocket listener;
 
     //Creates a server on this computer
     public ChessServer() {
+        super(Color.WHITE);
         try {
             listener = new ServerSocket(PORT);
         } catch (Exception e) {
