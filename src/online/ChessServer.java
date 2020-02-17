@@ -26,7 +26,7 @@ public class ChessServer extends ChessPlayer {
     }
 
     //Waiting for client to connect
-    public void waitForClient() {
+    public boolean waitForClient() {
         try {
             System.out.println("Waiting for cilent to connect");
             Socket socket = listener.accept();
@@ -34,12 +34,14 @@ public class ChessServer extends ChessPlayer {
             output = new PrintWriter(socket.getOutputStream(), true);
             while (true) {
                 output.println("CONNECTED");
-                if (input.readLine().equalsIgnoreCase("ACK"))
-                    break;
+                if (input.readLine().equalsIgnoreCase("ACK")) {
+                    System.out.println("Server: connected");
+                    return true;
+                }
             }
-            System.out.println("Server: connected");
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 }

@@ -2,7 +2,7 @@ package tests;
 
 import enums.Color;
 import enums.Type;
-import gui.Piece;
+import logic.Piece;
 import logic.ChessGame;
 
 import java.util.LinkedList;

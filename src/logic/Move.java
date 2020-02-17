@@ -1,7 +1,5 @@
 package logic;
 
-import gui.Piece;
-
 public class Move {
     public final int sourceRow;
     public final int sourceColumn;

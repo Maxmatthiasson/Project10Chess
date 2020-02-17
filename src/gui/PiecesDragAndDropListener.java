@@ -41,23 +41,23 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		int y = evt.getPoint().y;
 		
 		// find out which piece to move.
-		// we check the list from top to buttom
-		// (therefore we itereate in reverse order)
+		// we check the list from top to bottom
+		// (therefore we iterate in reverse order)
 		//
-		for (int i = this.guiPieces.size()-1; i >= 0; i--) {
-			GuiPiece guiPiece = this.guiPieces.get(i);
+		for (int i = guiPieces.size()-1; i >= 0; i--) {
+			GuiPiece guiPiece = guiPieces.get(i);
 			if (guiPiece.isCaptured()) continue;
 
 			if(ChessGui.mouseOverPiece(guiPiece,x,y)){
 				
-				if (this.chessGui.getGameState() == guiPiece.getColor() && this.chessGui.getColor() == guiPiece.getColor()){
+				if (chessGui.getGameState() == guiPiece.getColor() && chessGui.getColor() == guiPiece.getColor()){
 					// calculate offset, because we do not want the drag piece
 					// to jump with it's upper left corner to the current mouse
 					// position
 					//
-					this.dragOffsetX = x - guiPiece.getX();
-					this.dragOffsetY = y - guiPiece.getY();
-					this.dragPiece = guiPiece;
+					dragOffsetX = x - guiPiece.getX();
+					dragOffsetY = y - guiPiece.getY();
+					dragPiece = guiPiece;
 					sx = x;
 					sy = y;
 					break;
@@ -66,41 +66,37 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		}
 		
 		// move drag piece to the top of the list
-		if(this.dragPiece != null){
-			this.guiPieces.remove( this.dragPiece );
-			this.guiPieces.add(this.dragPiece);
+		if(dragPiece != null){
+			guiPieces.remove( dragPiece );
+			guiPieces.add(dragPiece);
 		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent evt) {
-		if( this.dragPiece != null){
-			int x = evt.getPoint().x - this.dragOffsetX;
-			int y = evt.getPoint().y - this.dragOffsetY;
+		if( dragPiece != null){
+			int x = evt.getPoint().x - dragOffsetX;
+			int y = evt.getPoint().y - dragOffsetY;
 			
 			// set game piece to the new location if possible
-			chessGui.setNewPieceLocation(this.dragPiece, x, y);
+			chessGui.setNewPieceLocation(dragPiece, x, y);
 			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + x + "-" +  y);
-			this.chessGui.repaint();
-			this.dragPiece = null;
+			chessGui.repaint();
+			dragPiece = null;
 		}
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent evt) {
-		if(this.dragPiece != null){
+		if(dragPiece != null){
 			
-			int x = evt.getPoint().x - this.dragOffsetX;
-			int y = evt.getPoint().y - this.dragOffsetY;
+			int x = evt.getPoint().x - dragOffsetX;
+			int y = evt.getPoint().y - dragOffsetY;
+
+			dragPiece.setX(x);
+			dragPiece.setY(y);
 			
-//			System.out.println(
-//					"row:"+ChessGui.convertYToRow(y)
-//					+" column:"+ChessGui.convertXToColumn(x));
-			
-			this.dragPiece.setX(x);
-			this.dragPiece.setY(y);
-			
-			this.chessGui.repaint();
+			chessGui.repaint();
 		}
 	}
 

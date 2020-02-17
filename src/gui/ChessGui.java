@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.*;
 
 import enums.Color;
+import logic.Piece;
 import online.ChessClient;
 import online.ChessPlayer;
 import online.ChessServer;
@@ -23,7 +24,7 @@ import logic.ChessGame;
 /**
  * @author Murat, Alex and Nikola
  */
-public class ChessGui extends JLayeredPane implements Runnable, ActionListener, MouseListener, FocusListener, KeyListener {
+public class ChessGui extends JLayeredPane implements Runnable, MouseListener, FocusListener, KeyListener {
 
     private static final long serialVersionUID = -8207574964820892354L;
 
@@ -42,13 +43,10 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private static final int DRAG_TARGET_SQUARE_START_X = BOARD_START_X - (int) (PIECE_WIDTH / 2.0);
     private static final int DRAG_TARGET_SQUARE_START_Y = BOARD_START_Y - (int) (PIECE_HEIGHT / 2.0);
 
-    private Image imgBackground;
+    private Image imgBackground = new ImageIcon("img/bo.png").getImage();
 
-    private JButton newGame;
-    private JButton infoB;
-    private JButton send;
-    private JButton logIn;
-    private JButton acceptCon;
+    private JButton btnJoin = new JButton("Join game");
+    private JButton btnHost = new JButton("Host game");
 
     private JLabel lblGameState;
     private JLabel gameOn = new JLabel("Searching for opponent");
@@ -56,93 +54,76 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     private JLabel startScreen;
     private JLabel lblYourIP;
 
-    private JTextArea messageBoard;
+    private JTextArea messageBoard = new JTextArea();
     private JTextField messageField;
     private JTextField userName;
-    private JTextField opponent;
     private Font messageFont = new Font("Verdana", Font.BOLD, 15);
-    private Font conected = new Font("Verdana", Font.PLAIN, 10);
-    private java.awt.Color color;
-
+    private Font connected = new Font("Verdana", Font.PLAIN, 10);
     private String user;
-    private String yourIP;
 
-    private boolean gameOver = false;
     private boolean mousePressed = false;
-    private boolean serverMode = false;
-    private boolean opponentFound = false, connected = false, th;
     private boolean click = false;
-    private boolean msgFocus = false;
 
     private ChessPlayer player;
-    private Thread networkThread;
-
     private ChessGame chessGame;
     private List<GuiPiece> guiPieces = new ArrayList<>();
-    private PiecesDragAndDropListener listener;
 
     public ChessGui() throws IOException {
-        this.setLayout(null);
-
-        // background
-        this.imgBackground = new ImageIcon("img/bo.png").getImage();
+        setLayout(null);
 
         // create chess game
-        this.chessGame = new ChessGame();
+        chessGame = new ChessGame();
 
         // wrap game pieces into their graphical representation
-        for (Piece piece : this.chessGame.getPieces()) {
-            createAndAddGuiPiece(piece);
-        }
+        createAndAddGuiPieces();
 
         // add listeners to enable drag and drop
-        //
-        listener = new PiecesDragAndDropListener(this.guiPieces, this);
+        PiecesDragAndDropListener listener = new PiecesDragAndDropListener(guiPieces, this);
+        addMouseListener(listener);
+        addMouseMotionListener(listener);
 
-        // add keylistener to enable keyboard commands
-
-
-        // label to display game state
-        this.gameState();
         // All Gui components
-        this.startScreen();
-        this.newGame();
-        this.messageBoard();
-        this.sendButton();
-        this.messageField();
-        this.gameON();
-        this.infoPanel();
-        this.infoButton();
-        this.logInButton();
-        this.userName();
-        this.opponent();
-        this.acceptConnect();
-        this.yourIP();
-        this.applicationFrame();
+        setupGameStateLabel();
+        setupStartScreen();
+        setupNewGameButton();
+        setupMessageBoard();
+        sendButton();
+        setupMessageField();
+        setupOpponentFoundLabel();
+        setupInfoPanel();
+        setupInfoButton();
+        setupJoinButton();
+        setupUserNameTextField();
+        setupHostButton();
+        setupIpLabel();
+        applicationFrame();
     }
 
     public Color getColor() {
         return player.getColor();
     }
 
-    public void gameState() {
+    public Color getGameState() {
+        return chessGame.getGameState();
+    }
+
+    private void setupGameStateLabel() {
         String labelText = chessGame.getGameStateAsText();
-        this.lblGameState = new JLabel(labelText);
+        lblGameState = new JLabel(labelText);
         lblGameState.setBounds(100, 240, 200, 100);
         lblGameState.setFont(new Font("Verdana", Font.BOLD, 15));
         lblGameState.setForeground(java.awt.Color.WHITE);
-        this.add(lblGameState);
+        add(lblGameState);
     }
 
-    public void newGame() {
-        this.newGame = new JButton("New Game");
+    private void setupNewGameButton() {
+        JButton newGame = new JButton("New Game");
         newGame.setBounds(50, 350, 210, 50);
-        this.add(newGame);
-        newGame.addActionListener(this);
+        newGame.addActionListener(e -> newGame());
+        add(newGame);
     }
 
-    public void messageBoard() {
-        this.messageBoard = new JTextArea();
+    private void setupMessageBoard() {
         messageBoard.setFont(messageFont);
         messageBoard.setMargin(new Insets(7, 7, 7, 7));
         messageBoard.setEditable(false);
@@ -151,118 +132,98 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         jsp.setSize(680, 200);
         jsp.setLocation(50, 470);
         jsp.setViewportView(messageBoard);
-
-        // this.add(messageBoard);
-        this.add(jsp);
+        add(jsp);
     }
 
-    public void sendButton() {
-        this.send = new JButton("Send");
+    private void sendButton() {
+        JButton send = new JButton("Send");
         send.setSize(100, 50);
         send.setLocation(630, 690);
-        this.add(send);
-        send.addActionListener(this);
+        send.addActionListener(e -> sendMessage());
+        add(send);
     }
 
-    public void messageField() {
-        this.messageField = new JTextField();
+    private void setupMessageField() {
+        messageField = new JTextField();
         messageField.setBounds(50, 690, 580, 50);
         messageField.setFont(messageFont);
         messageField.addKeyListener(this);
-        this.add(messageField);
+        add(messageField);
     }
 
-    public void gameON() {
-        if (this.opponentFound == true) {
-            gameOn.setText("Opponent found ");
-        }
+    private void setupOpponentFoundLabel() {
+        gameOn.setText("Opponent found ");
         gameOn.setForeground(java.awt.Color.WHITE);
-        gameOn.setFont(conected);
+        gameOn.setFont(connected);
         gameOn.setSize(200, 30);
         gameOn.setLocation(60, 15);
-        this.add(gameOn);
+        add(gameOn);
     }
 
-    public void infoPanel() {
-        this.infoP = new JLabel(new ImageIcon("img/info.png"));
+    private void setupInfoPanel() {
+        infoP = new JLabel(new ImageIcon("img/info.png"));
         infoP.setBounds(110, 20, 560, 730);
         infoP.setVisible(false);
-        this.add(infoP, 2, 0);
+        add(infoP, 2, 0);
     }
 
-    public void startScreen() {
-        this.startScreen = new JLabel(new ImageIcon("img/start.png"));
+    private void setupStartScreen() {
+        startScreen = new JLabel(new ImageIcon("img/start2.png"));
         startScreen.setBounds(0, -110, 800, 1000);
         startScreen.setVisible(true);
-        this.add(startScreen, 3, 0);
+        add(startScreen, 3, 0);
     }
 
-    public void infoButton() {
-        this.infoB = new JButton();
-        this.infoB.setIcon(new ImageIcon("img/infoButton.png"));
-        infoB.setBounds(715, 50, 56, 56);
-        this.add(infoB);
-        infoB.addActionListener(this);
+    private void setupInfoButton() {
+        JButton btnInfo = new JButton(new ImageIcon("img/setupInfoButton.png"));
+        btnInfo.setBounds(715, 50, 56, 56);
+        add(btnInfo);
+        btnInfo.addActionListener(e -> showInfo());
     }
 
-    public void logInButton() {
-        this.logIn = new JButton("Join game");
-        logIn.setBounds(300, 520, 210, 50);
-        logIn.setVisible(true);
-        logIn.setBackground(java.awt.Color.BLUE);
-        logIn.setForeground(java.awt.Color.WHITE);
-        logIn.setFont(new Font("Tahoma", Font.BOLD, 20));
-        this.add(logIn, 3, 0);
-        logIn.addActionListener(this);
+    private void setupJoinButton() {
+        btnJoin.setBounds(350, 350, 240, 50);
+        btnJoin.setVisible(true);
+        btnJoin.setBackground(java.awt.Color.BLUE);
+        btnJoin.setForeground(java.awt.Color.WHITE);
+        btnJoin.setFont(new Font("Tahoma", Font.BOLD, 20));
+        add(btnJoin, 3, 0);
+        btnJoin.addActionListener(e -> joinGame());
     }
 
-    public void acceptConnect() {
-        this.acceptCon = new JButton("Start as host");
-        acceptCon.setBounds(350, 415, 240, 50);
-        acceptCon.setVisible(true);
-        acceptCon.setBackground(java.awt.Color.WHITE);
-        acceptCon.setForeground(java.awt.Color.DARK_GRAY);
-        acceptCon.setFont(new Font("Tahoma", Font.BOLD, 15));
-        this.add(acceptCon, 3, 0);
-        acceptCon.addActionListener(this);
-        acceptCon.addMouseListener(this);
+    private void setupHostButton() {
+        btnHost.setBounds(350, 415, 240, 50);
+        btnHost.setVisible(true);
+        btnHost.setBackground(java.awt.Color.WHITE);
+        btnHost.setForeground(java.awt.Color.DARK_GRAY);
+        btnHost.setFont(new Font("Tahoma", Font.BOLD, 15));
+        add(btnHost, 3, 0);
+        btnHost.addActionListener(e -> hostGame());
+        btnHost.addMouseListener(this);
     }
 
-    public void userName() {
-        this.color = new java.awt.Color(204, 204, 204);
-        this.userName = new JTextField();
+    private void setupUserNameTextField() {
+        userName = new JTextField();
         userName.setBounds(350, 285, 240, 40);
         userName.setVisible(true);
         userName.setFont(messageFont);
-        userName.setForeground(color);
+        userName.setForeground(new java.awt.Color(204, 204, 204));
         userName.setText("Username");
         userName.addFocusListener(this);
-        this.add(userName, 3, 0); //JTextField dissapears when changing constarint to 2.
+        add(userName, 3, 0); //JTextField dissapears when changing constraint to 2.
     }
 
-    public void opponent() {
-        this.opponent = new JTextField();
-        opponent.setBounds(350, 350, 240, 40);
-        opponent.setVisible(true);
-        opponent.setFont(messageFont);
-        opponent.setForeground(color);
-        opponent.setText("IP-Address");
-        opponent.addFocusListener(this);
-        this.add(opponent, 3, 0);
-    }
-
-    public void yourIP() throws IOException {
-        this.yourIP = "" + InetAddress.getLocalHost().getHostAddress();
-        this.lblYourIP = new JLabel("Player IP: " + yourIP);
+    private void setupIpLabel() throws IOException {
+        String yourIP = InetAddress.getLocalHost().getHostAddress();
+        lblYourIP = new JLabel("Player IP: " + yourIP);
         lblYourIP.setBounds(270, 670, 350, 100);
         lblYourIP.setFont(new Font("Verdana", Font.BOLD, 20));
         lblYourIP.setForeground(java.awt.Color.WHITE);
-        this.add(lblYourIP, 3, 0);
+        add(lblYourIP, 3, 0);
     }
 
-    public void applicationFrame() {
+    private void applicationFrame() {
         JFrame f = new JFrame("OnlineChess");
-        // f.setSize(80, 80);
         f.setVisible(true);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.add(this);
@@ -271,72 +232,26 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         f.setLocationRelativeTo(null);
     }
 
-    public void init(String ip) {
-        opponentFound = false;
-        repaint();
-        gameOn.setText("Searching for Opponent ");
-        connected = false;
-
-        player = new ChessClient();
-        if (((ChessClient) player).connect(ip)) {
-            // we will act as client
-            this.opponentFound = true;
-            // chessGame.gameState = ChessGame.GAME_STATE_WHITE;
-            repaint();
-        } else {
-            // we will be a server waiting for a client
-            // chessGame.gameState = ChessGame.GAME_STATE_BLACK;
-            player = new ChessServer();
-            this.opponentFound = false;
-        }
-        networkThread = new Thread(this);
-        networkThread.start();
-    }
-
-    public void sendMove(String move) {
+    void sendMove(String move) {
         player.sendCommand(move);
     }
 
     public void run() {
         String line;
-        if (player instanceof ChessClient)
-            this.opponentFound = true;
         gameOn.setText("Opponent found ");
-        th = true;
-        while (th) {
-            if (player instanceof ChessServer && !connected) {
-                System.out.println("Waiting for client");
-                ((ChessServer) player).waitForClient();
-                connected = true;
-                opponentFound = true;
-                repaint();
-                gameOn.setText("Opponent found ");
-            }
-
+        while (true) {
             line = player.getCommand();
             process(line);
-            line = null;
         }
     }
 
-    public void process(String command) {
+    private void process(String command) {
         System.out.println("Process: " + command);
-        if (command.equals("####")) {
-            messageBoard.setText(null);
-            guiPieces.clear();
-            // create chess game
-            this.chessGame = new ChessGame();
-
-            // wrap game pieces into their graphical representation
-            for (Piece piece : this.chessGame.getPieces()) {
-                createAndAddGuiPiece(piece);
-            }
-            repaint();
-            return;
-        }
-        if (command.startsWith("MESSAGE"))
+        if (command.equals("####")) { // New game
+            resetBoard();
+        } else if (command.startsWith("MESSAGE"))
             messageBoard.append(command.substring(7) + "\n");
-        if (command.startsWith("MOVE")) {
+        else if (command.startsWith("MOVE")) {
             System.out.println(command);
             String line, toks[];
             line = command.substring(4);
@@ -348,40 +263,33 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     }
 
     /**
-     * create a game piece
-     *
-     * @param piece The Piece to add
+     * Creates the graphical representations of the pieces
      */
-    private void createAndAddGuiPiece(Piece piece) {
-        GuiPiece guiPiece = new GuiPiece(piece);
-        this.guiPieces.add(guiPiece);
+    private void createAndAddGuiPieces() {
+        for (Piece piece : chessGame.getPieces()) {
+            GuiPiece guiPiece = new GuiPiece(piece);
+            guiPieces.add(guiPiece);
+        }
     }
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.drawImage(this.imgBackground, 0, 0, null);
+        g.drawImage(imgBackground, 0, 0, null);
 
-        if (this.opponentFound == false) {
-            g.setColor(java.awt.Color.RED);
-        } else {
-            g.setColor(java.awt.Color.GREEN);
-        }
+        //if (this.opponentFound == false) {
+        //  g.setColor(java.awt.Color.RED);
+        //} else {
+        g.setColor(java.awt.Color.GREEN);
+        //}
         g.fillOval(15, 15, 30, 30);
 
-        for (GuiPiece guiPiece : this.guiPieces) {
+        for (GuiPiece guiPiece : guiPieces) {
             if (!guiPiece.isCaptured()) {
                 g.drawImage(guiPiece.getImage(), guiPiece.getX(), guiPiece.getY(), null);
             }
         }
 
-        this.lblGameState.setText(chessGame.getGameStateAsText());
-    }
-
-    /**
-     * @return current game state
-     */
-    public Color getGameState() {
-        return this.chessGame.getGameState();
+        lblGameState.setText(chessGame.getGameStateAsText());
     }
 
     /**
@@ -410,7 +318,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
      * @param x
      * @return logical column for x coordinate
      */
-    public static int convertXToColumn(int x) {
+    private static int convertXToColumn(int x) {
         return (x - DRAG_TARGET_SQUARE_START_X) / SQUARE_WIDTH;
     }
 
@@ -420,7 +328,7 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
      * @param y
      * @return logical row for y coordinate
      */
-    public static int convertYToRow(int y) {
+    private static int convertYToRow(int y) {
         return Piece.ROW_8 - (y - DRAG_TARGET_SQUARE_START_Y) / SQUARE_HEIGHT;
     }
 
@@ -443,134 +351,171 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
         } else {
             // change model and update gui piece afterwards
             System.out.println("moving piece to " + targetRow + "/" + targetColumn);
-            this.chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
+            chessGame.movePiece(dragPiece.getPiece().getRow(), dragPiece.getPiece().getColumn(), targetRow,
                     targetColumn);
             for (GuiPiece g : guiPieces)
                 g.resetToUnderlyingPiecePosition();
         }
     }
 
-    public void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
+    private void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
 
         GuiPiece dragPiece = null;
-        for (int i = this.guiPieces.size() - 1; i >= 0 && dragPiece == null; i--) {
-            GuiPiece guiPiece = this.guiPieces.get(i);
+        for (int i = guiPieces.size() - 1; i >= 0 && dragPiece == null; i--) {
+            GuiPiece guiPiece = guiPieces.get(i);
             if (mouseOverPiece(guiPiece, sourceX, sourceY))
                 dragPiece = guiPiece;
         }
         // move drag piece to the top of the list
         if (dragPiece != null) {
-            this.guiPieces.remove(dragPiece);
-            this.guiPieces.add(dragPiece);
+            guiPieces.remove(dragPiece);
+            guiPieces.add(dragPiece);
         }
 
         setNewPieceLocation(dragPiece, targetX, targetY);
     }
 
-    public static boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
-
+    static boolean mouseOverPiece(GuiPiece guiPiece, int x, int y) {
         return guiPiece.getX() <= x && guiPiece.getX() + guiPiece.getWidth() >= x && guiPiece.getY() <= y
                 && guiPiece.getY() + guiPiece.getHeight() >= y;
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        //When pressed shows information abouth chess pieces
-        if (e.getSource().equals(infoB) && click == false) {
-            this.infoP.setVisible(true);
-
-            click = true;
-        } else if (e.getSource().equals(infoB) && click == true) {
-            this.infoP.setVisible(false);
-            click = false;
+    private void joinGame() {
+        if (userName.getText().length() > 3) {
+            String ip = JOptionPane.showInputDialog(null, "Enter address of server");
+            if (testIp(ip)) {
+                player = new ChessClient();
+                Runnable runJoin = () -> joinRunnable(ip);
+                Thread join = new Thread(runJoin);
+                join.start();
+            } else
+                JOptionPane.showMessageDialog(null, "IP not valid");
         }
+    }
 
-        //When button pressed removes start screen and its components and initiate the game
-        if (e.getSource().equals(logIn)) {
-            if (userName.getText().length() > 3 && !"IP-Address".equals(this.opponent.getText())) {
-                int length = opponent.getText().length();
-                String ip = this.opponent.getText();
-                if (!gameOver) {
-                    this.addMouseListener(listener);
-                    this.addMouseMotionListener(listener);
-                }
-                if (!serverMode && !"Server Mode".equals(this.opponent.getText()) && length > 5) {
-                    init(ip);
-                    System.out.println(ip);
-                    this.userName.setVisible(false);
-                    this.user = userName.getText();
-                    this.startScreen.setVisible(false);
-                    this.logIn.setEnabled(false);
-                    this.logIn.setVisible(false);
-                    this.opponent.setVisible(false);
-                    this.acceptCon.setVisible(false);
-                    this.acceptCon.setEnabled(false);
-                } else if (serverMode && "Server Mode".equals(this.opponent.getText())) {
-                    this.userName.setVisible(false);
-                    this.user = userName.getText();
-                    this.startScreen.setVisible(false);
-                    this.logIn.setEnabled(false);
-                    this.logIn.setVisible(false);
-                    this.opponent.setVisible(false);
-                    this.acceptCon.setVisible(false);
-                    this.acceptCon.setEnabled(false);
-                }
-            }
-
-        }
-
-        //When button pressed and specific conditionds are true makes you to server and waits for connection
-        if (e.getSource().equals(acceptCon) && (!mousePressed)) {
-            if (userName.getText().length() > 3
-                    && (this.opponent.getText().length() == 0 || "IP-Address".equals(this.opponent.getText()))) {
-                this.opponent.setEditable(false);
-                this.opponent.setText("Server Mode");
-                this.serverMode = true;
-                this.mousePressed = true;
-                if (serverMode) {
-                    init(yourIP);
-                    System.out.println(yourIP);
-                }
-            }
-        }
-
-        //When button pressed sends message
-        if (e.getSource().equals(send)) {
-            String pMessage = user + ": " + messageField.getText();
-            messageField.setText(""); //Removes text in the messageField after sending a message.
-
-            if (player instanceof ChessClient || player instanceof ChessServer && connected) {
-                // act as client
-                player.sendCommand("MESSAGE" + pMessage);
-                messageBoard.append(pMessage + "\n");
-            }
-        }
-
-        //When button pressed restarts the game
-        if (e.getSource().equals(newGame)) {
-            messageBoard.setText(null);
-            player.sendCommand("####");
-
-            guiPieces.clear();
-            // create chess game
-            chessGame = new ChessGame();
-            gameOver = false;
-
-            // wrap game pieces into their graphical representation
-            for (Piece piece : chessGame.getPieces()) {
-                createAndAddGuiPiece(piece);
-            }
+    private void joinRunnable(String ip) {
+        btnJoin.setEnabled(false);
+        btnHost.setEnabled(false);
+        btnJoin.setText("Connecting...");
+        if (((ChessClient) player).connect(ip)) {
             repaint();
+            System.out.println(ip);
+            enterGame();
+        } else
+            JOptionPane.showMessageDialog(null, "Failed to connect to server.");
+        btnJoin.setEnabled(true);
+        btnHost.setEnabled(true);
+        btnJoin.setText("Join game");
+    }
+
+    private void hostGame() {
+        if (userName.getText().length() > 3) {
+            player = new ChessServer();
+            Thread host = new Thread(this::hostRunnable);
+            host.start();
         }
+    }
+
+    private void hostRunnable() {
+        btnJoin.setEnabled(false);
+        btnHost.setEnabled(false);
+        btnHost.setText("Waiting for client...");
+        if (((ChessServer) player).waitForClient())
+            enterGame();
+        else btnJoin.setEnabled(true);
+        {
+            btnHost.setEnabled(true);
+            btnHost.setText("Host game");
+            JOptionPane.showMessageDialog(null, "Failed to connect to client.");
+        }
+    }
+
+    /**
+     * Tests wether an IP is valid
+     *
+     * @param ip
+     * @return
+     */
+    private boolean testIp(String ip) {
+        boolean res = true;
+        try {
+            String[] strArr = ip.split("\\.");
+            int intTest;
+            for (int i = 0; i < 4 && res; i++) {
+                intTest = Integer.parseInt(strArr[i]);
+                if (intTest < 0 || intTest > 255)
+                    res = false;
+            }
+        } catch (Exception e) {
+            res = false;
+        }
+        return res;
+    }
+
+    /**
+     * Go from the login screen to the board
+     */
+    private void enterGame() {
+        userName.setVisible(false);
+        user = userName.getText();
+        startScreen.setVisible(false);
+        btnJoin.setEnabled(false);
+        btnJoin.setVisible(false);
+        btnHost.setVisible(false);
+        btnHost.setEnabled(false);
+        lblYourIP.setVisible(false);
+
+        (new Thread(this)).start();
+    }
+
+    /**
+     * Hide or show the chess info screen
+     */
+    private void showInfo() {
+        infoP.setVisible(!click);
+        click = !click;
+    }
+
+    /**
+     * Send message to the other player
+     */
+    private void sendMessage() {
+        String pMessage = user + ": " + messageField.getText();
+        messageField.setText(""); //Removes text in the message field after sending a message.
+        player.sendCommand("MESSAGE" + pMessage);
+        messageBoard.append(pMessage + "\n");
+    }
+
+    /**
+     * When clicking the button "New game", send a command to the other player and reset the board
+     */
+    private void newGame() {
+        player.sendCommand("####");
+        resetBoard();
+    }
+
+    /**
+     * Clear the chat and put all pieces back to their original places
+     */
+    private void resetBoard() {
+        messageBoard.setText(null);
+
+        // create chess game
+        chessGame = new ChessGame();
+
+        guiPieces.clear();
+        // wrap game pieces into their graphical representation
+        createAndAddGuiPieces();
+        repaint();
     }
 
     // If you click on the textFields the text gets removed and changes text color to black.
     @Override
     public void mouseClicked(MouseEvent e) {
         // TODO Auto-generated method stub
-//        if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
-//            this.userName.setText("");
-//            this.userName.setForeground(java.awt.Color.BLACK);
+//        if (e.getSource().equals(setupUserNameTextField) && (setupUserNameTextField.getText().equals("Username"))) {
+//            this.setupUserNameTextField.setText("");
+//            this.setupUserNameTextField.setForeground(java.awt.Color.BLACK);
 //        }
 //        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
 //            this.opponent.setText("");
@@ -582,44 +527,41 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     @Override
     public void mouseEntered(MouseEvent e) {
         // TODO Auto-generated method stub
-        if (e.getSource().equals(acceptCon) && (mousePressed == false)) {
-            acceptCon.setBackground(java.awt.Color.GREEN);
-            acceptCon.setForeground(java.awt.Color.WHITE);
-
+        if (e.getSource().equals(btnHost) && !mousePressed) {
+            btnHost.setBackground(java.awt.Color.GREEN);
+            btnHost.setForeground(java.awt.Color.WHITE);
         }
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
         // TODO Auto-generated method stub
-        if (e.getSource().equals(acceptCon) && (mousePressed == false)) {
-            acceptCon.setBackground(java.awt.Color.WHITE);
-            acceptCon.setForeground(java.awt.Color.DARK_GRAY);
-
+        if (e.getSource().equals(btnHost) && !mousePressed) {
+            btnHost.setBackground(java.awt.Color.WHITE);
+            btnHost.setForeground(java.awt.Color.DARK_GRAY);
         }
     }
 
     //mousePressed and mouseReleased are used as indication on "Server Mode".
-    //The color of acceptCon button changes to green
+    //The color of btnHost button changes to green
     @Override
     public void mousePressed(MouseEvent e) {
         // TODO Auto-generated method stub
-        if (e.getSource().equals(acceptCon) && (mousePressed == true)) {
-            System.out.println("acceptCon button pressed");
-            acceptCon.setBackground(java.awt.Color.GREEN);
-            acceptCon.setForeground(java.awt.Color.WHITE);
+        if (e.getSource().equals(btnHost) && mousePressed) {
+            System.out.println("btnHost button pressed");
+            btnHost.setBackground(java.awt.Color.GREEN);
+            btnHost.setForeground(java.awt.Color.WHITE);
         }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
         // TODO Auto-generated method stub
-        if (e.getSource().equals(acceptCon) && (mousePressed == true)) {
-            acceptCon.setBackground(java.awt.Color.GREEN);
-            acceptCon.setForeground(java.awt.Color.WHITE);
+        if (e.getSource().equals(btnHost) && mousePressed) {
+            btnHost.setBackground(java.awt.Color.GREEN);
+            btnHost.setForeground(java.awt.Color.WHITE);
         }
     }
-
 
     //Starts the game
     public static void main(String[] args) throws IOException {
@@ -629,43 +571,36 @@ public class ChessGui extends JLayeredPane implements Runnable, ActionListener, 
     @Override
     public void focusGained(FocusEvent e) {
         if (e.getSource().equals(userName) && (userName.getText().equals("Username"))) {
-            this.userName.setText("");
-            this.userName.setForeground(java.awt.Color.BLACK);
+            userName.setText("");
+            userName.setForeground(java.awt.Color.BLACK);
         }
-        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
+        /*if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
             this.opponent.setText("");
             this.opponent.setForeground(java.awt.Color.BLACK);
-        }
-        if(e.getSource().equals(messageField)) {
-            msgFocus = true;
-        }
+        }*/
     }
 
     @Override
     public void focusLost(FocusEvent e) {
-        if(e.getSource().equals(messageField)) {
-            msgFocus = false;
-        }
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             System.out.println("Enter Typed");
             String pMessage = user + ": " + messageField.getText();
-            messageField.setText(""); //Removes text in the messageField after sending a message.
+            messageField.setText(""); //Removes text in the setupMessageField after sending a message.
 
-            if (player instanceof ChessClient || player instanceof ChessServer && connected) {
-                // act as client
-                player.sendCommand("MESSAGE" + pMessage);
-                messageBoard.append(pMessage + "\n");
-            }
+            player.sendCommand("MESSAGE" + pMessage);
+            messageBoard.append(pMessage + "\n");
         }
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) {
+    }
 }

@@ -3,6 +3,7 @@ package gui;
 //Creates a chess piece and positions it on a specific row and column
 
 import enums.Color;
+import logic.Piece;
 
 import javax.swing.*;
 import java.awt.Image;

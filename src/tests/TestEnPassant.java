@@ -2,9 +2,8 @@ package tests;
 
 import enums.Color;
 import enums.Type;
-import gui.Piece;
+import logic.Piece;
 import logic.ChessGame;
-import logic.MoveValidator;
 
 import java.util.LinkedList;
 

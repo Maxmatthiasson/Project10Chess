@@ -1,6 +1,6 @@
 package tests;
 
-import gui.Piece;
+import logic.Piece;
 import logic.ChessGame;
 import logic.MoveValidator;
 

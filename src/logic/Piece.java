@@ -1,4 +1,4 @@
-package gui;
+package logic;
 
 import enums.Color;
 import enums.Type;

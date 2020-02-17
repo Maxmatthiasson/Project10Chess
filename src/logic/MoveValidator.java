@@ -2,7 +2,6 @@ package logic;
 
 import enums.Color;
 import enums.Type;
-import gui.Piece;
 
 import java.util.List;
 

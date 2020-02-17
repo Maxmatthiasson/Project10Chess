@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import enums.Color;
 import enums.Type;
-import gui.Piece;
 
 import javax.swing.*;
 
