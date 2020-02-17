@@ -37,7 +37,7 @@ public class ChessServer extends ChessPlayer {
     //Waiting for client to connect
     public boolean waitForClient() {
         try {
-            System.out.println("Waiting for cilent to connect");
+            System.out.println("Waiting for client to connect");
             Socket socket = listener.accept();
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(), true);

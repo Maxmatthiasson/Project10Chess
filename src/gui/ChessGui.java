@@ -400,19 +400,27 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
                 && guiPiece.getY() + guiPiece.getHeight() >= y;
     }
 
+    /**
+     * Method for trying to join a game a server has started
+     */
     private void joinGame() {
         if (userName.getText().length() > 3) {
-            String ip = JOptionPane.showInputDialog(null, "Enter IP of server");
+            String ip = JOptionPane.showInputDialog(null, "Enter the IP of the server");
             if (testIp(ip)) {
                 player = new ChessClient();
-                Runnable runJoin = () -> joinRunnable(ip);
+                Runnable runJoin = () -> joinRunnable(ip); // Invokes the joinRunnable() method below
                 thrJoin = new Thread(runJoin);
                 thrJoin.start();
             } else
-                JOptionPane.showMessageDialog(null, "IP not valid");
-        }
+                JOptionPane.showMessageDialog(null, "The IP is not valid");
+        } else
+            JOptionPane.showMessageDialog(null, "Username too short, must be at least 3 characters.");
     }
 
+    /**
+     * A method invoked by a Runnable (Thread) so the search for server doesn't freeze the system
+     * @param ip The IP of the server
+     */
     private void joinRunnable(String ip) {
         btnJoin.setEnabled(false);
         btnHost.setEnabled(false);
@@ -429,6 +437,9 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         }
     }
 
+    /**
+     * Method for cancelling the search for a server
+     */
     private void cancelJoin() {
         thrJoin.interrupt();
         btnCancelJoin.setVisible(false);
@@ -438,14 +449,21 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnJoin.setText("Join game");
     }
 
+    /**
+     * Method for starting a server that a client can join
+     */
     private void hostGame() {
         if (userName.getText().length() > 3) {
             player = new ChessServer();
-            Thread thrHost = new Thread(this::hostRunnable);
+            Thread thrHost = new Thread(this::hostRunnable); // Invokes the method hostRunnable() below
             thrHost.start();
-        }
+        } else
+            JOptionPane.showMessageDialog(null, "Username too short, must be at least 3 characters.");
     }
 
+    /**
+     * A method invoked by a Runnable (Thread) so the search for client doesn't freeze the system
+     */
     private void hostRunnable() {
         btnJoin.setEnabled(false);
         btnHost.setEnabled(false);
@@ -466,6 +484,9 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         }
     }
 
+    /**
+     * Method for cancelling the search for a client
+     */
     private void cancelHost() {
         btnCancelHost.setEnabled(false);
         ((ChessServer) player).stopSearchForClient();
@@ -474,8 +495,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     /**
      * Tests whether an IP is valid
      *
-     * @param ip
-     * @return
+     * @param ip The IP to test
+     * @return A boolean on the validity of the IP
      */
     private boolean testIp(String ip) {
         boolean res = true;
