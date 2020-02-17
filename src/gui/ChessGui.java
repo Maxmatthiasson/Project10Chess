@@ -166,7 +166,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     }
 
     private void setupInfoButton() {
-        JButton btnInfo = new JButton(new ImageIcon("img/setupInfoButton.png"));
+        JButton btnInfo = new JButton();
+        btnInfo.setIcon(new ImageIcon("img/infoButton.png"));
         btnInfo.setBounds(715, 50, 56, 56);
         add(btnInfo);
         btnInfo.addActionListener(e -> showInfo());
@@ -262,10 +263,10 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
             String line, toks[];
             line = command.substring(4);
             toks = line.split("-");
-            setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
-                    Integer.parseInt(toks[3]));
             if (toks.length == 5) // See if promotion information is sent
                 chessGame.setPromotion(Type.valueOf(toks[4]));
+            setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
+                    Integer.parseInt(toks[3]));
             repaint();
         }
     }
@@ -378,6 +379,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         if (((ChessClient) player).connect(ip)) {
             repaint();
             System.out.println(ip);
+            btnCancelJoin.setEnabled(false);
+            btnCancelJoin.setVisible(false);
             enterGame();
         } else {
             JOptionPane.showMessageDialog(null, "Failed to connect to server.");
@@ -419,9 +422,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelHost.setEnabled(true);
         repaint();
         btnHost.setText("Waiting for client...");
-        if (((ChessServer) player).waitForClient())
+        if (((ChessServer) player).waitForClient()) {
+            btnCancelHost.setEnabled(false);
+            btnCancelHost.setVisible(false);
             enterGame();
-        else {
+        } else {
             btnJoin.setEnabled(true);
             btnHost.setEnabled(true);
             btnHost.setText("Host game");
