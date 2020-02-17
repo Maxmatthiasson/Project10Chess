@@ -37,6 +37,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private JButton btnCancelHost = new JButton("X");
 
     private JLabel lblGameState;
+    private JLabel lblPlayerColor;
     private JLabel gameOn = new JLabel("Searching for opponent");
     private JLabel infoP;
     private JLabel startScreen;
@@ -73,6 +74,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
         // All Gui components
         setupGameStateLabel();
+        setupPlayerColorLabel();
         setupStartScreen();
         setupNewGameButton();
         setupMessageBoard();
@@ -104,6 +106,15 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         lblGameState.setFont(new Font("Verdana", Font.BOLD, 15));
         lblGameState.setForeground(java.awt.Color.WHITE);
         add(lblGameState);
+    }
+
+    private void setupPlayerColorLabel() {
+        String labelText = "You are: ";
+        lblPlayerColor = new JLabel(labelText);
+        lblPlayerColor.setBounds(100, 280, 200, 100);
+        lblPlayerColor.setFont(new Font("Verdana", Font.BOLD, 15));
+        lblPlayerColor.setForeground(java.awt.Color.WHITE);
+        add(lblPlayerColor);
     }
 
     private void setupNewGameButton() {
@@ -266,7 +277,20 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
             setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
                     Integer.parseInt(toks[3]));
             repaint();
+        } else if (command.startsWith("COLOR")) {
+            String color = command.substring(5);
+            player.setColor(Color.valueOf(color));
+            lblPlayerColor.setText("You are: " + capitalizeString(player.getColor().toString()));
         }
+    }
+
+    /**
+     * Capitalizes the first letter in the string and returns it.
+     * @param str
+     * @return
+     */
+    private String capitalizeString(String str) {
+        return str.substring(0,1).toUpperCase() + str.substring(1).toLowerCase();
     }
 
     /**
@@ -375,13 +399,17 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelJoin.setEnabled(true);
         btnJoin.setText("Connecting...");
         String reply = ((ChessClient) player).connect(ip, userName.getText());
+        System.out.println(reply);
         if (!reply.equals("Error")) {
+            String[] replies = reply.split("-");
             repaint();
             System.out.println(ip);
             btnCancelJoin.setEnabled(false);
             btnCancelJoin.setVisible(false);
-            gameOn.setText("Playing online against " + reply);
+            gameOn.setText("Playing online against " + replies[0]);
             enterGame();
+            player.setColor(Color.valueOf(replies[1]));
+            lblPlayerColor.setText("You are: " + capitalizeString(replies[1]));
         } else {
             JOptionPane.showMessageDialog(null, "Failed to connect to server.");
             cancelJoin();
@@ -406,6 +434,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private void hostGame() {
         if (userName.getText().length() > 2) {
             player = new ChessServer();
+            newGameColor();
+
             Thread thrHost = new Thread(this::hostRunnable); // Invokes the method hostRunnable() below
             thrHost.start();
         } else
@@ -422,7 +452,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelHost.setEnabled(true);
         repaint();
         btnHost.setText("Waiting for client...");
-        String reply = ((ChessServer) player).waitForClient(userName.getText());
+        String reply = ((ChessServer) player).waitForClient(userName.getText(), player.getColor().toString());
         if (!reply.equals("Error")) {
             gameOn.setText("Playing online against " + reply);
             enterGame();
@@ -501,10 +531,30 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     }
 
     /**
+     * Asks for a new side to play on and sends the appropriate color to the opponent.
+     */
+    private String newGameColor() {
+        String[] options = {"White", "Black"};
+        int choice = JOptionPane.showOptionDialog(null, "What side do you want to play on?",
+                "Color choice",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[0]);
+        String newColor = choice == 0 ? "WHITE" : "BLACK";
+        String opponentColor = newColor == "WHITE" ? "BLACK" : "WHITE";
+        player.setColor(Color.valueOf(newColor));
+        lblPlayerColor.setText("You are: " + capitalizeString(newColor));
+        return opponentColor;
+    }
+
+    /**
      * When clicking the button "New game", send a command to the other player and reset the board
      */
     private void newGame() {
         player.sendCommand("####");
+        player.sendCommand("COLOR" + newGameColor());
         resetBoard();
     }
 
@@ -525,17 +575,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
     // If you click on the textFields the text gets removed and changes text color to black.
     @Override
-    public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-//        if (e.getSource().equals(setupUserNameTextField) && (setupUserNameTextField.getText().equals("Username"))) {
-//            this.setupUserNameTextField.setText("");
-//            this.setupUserNameTextField.setForeground(java.awt.Color.BLACK);
-//        }
-//        if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
-//            this.opponent.setText("");
-//            this.opponent.setForeground(java.awt.Color.BLACK);
-//        }
-    }
+    public void mouseClicked(MouseEvent e) {}
 
     //mouseEntered and mouseExited are used for hover affect
     @Override
@@ -577,10 +617,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         }
     }
 
-    //Starts the game
-    public static void main(String[] args) throws IOException {
-        new ChessGui();
-    }
 
     @Override
     public void focusGained(FocusEvent e) {
@@ -612,5 +648,10 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
     @Override
     public void keyReleased(KeyEvent e) {
+    }
+
+    //Starts the game
+    public static void main(String[] args) throws IOException {
+        new ChessGui();
     }
 }

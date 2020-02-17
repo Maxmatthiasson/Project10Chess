@@ -21,6 +21,8 @@ public abstract class ChessPlayer {
         return color;
     }
 
+    public void setColor(Color color) { this.color = color ; }
+
     //Read message/command from client
     public String getCommand() {
         String line;

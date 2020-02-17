@@ -1,8 +1,6 @@
 package online;
 
 import enums.Color;
-
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,14 +34,15 @@ public class ChessServer extends ChessPlayer {
     }
 
     //Waiting for client to connect
-    public String waitForClient(String userName) {
+    public String waitForClient(String userName, String color) {
         try {
             System.out.println("Waiting for client to connect");
             Socket socket = listener.accept();
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(), true);
             while (true) {
-                output.println("CONNECTED-" + userName);
+                String opponentColor = color.equals("WHITE") ? "BLACK" : "WHITE";
+                output.println("CONNECTED-" + userName + "-" + opponentColor);
                 String line = input.readLine();
                 if (line.startsWith("ACK")) {
                     System.out.println("Server: connected");

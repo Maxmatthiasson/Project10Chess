@@ -254,7 +254,7 @@ public class ChessGame {
         if (mate != null)
             ret += mate + " in mate<br>" + mate.reverse() + " wins!";
         else
-            ret += gameState + "'s move" + (check != null ? "<br>" + check + " in check" : "");
+            ret += gameState.toString().substring(0,1).toUpperCase() + gameState.toString().substring(1).toLowerCase() + "'s move" + (check != null ? "<br>" + check + " in check" : "");
         return ret + "</html>";
     }
 

@@ -28,7 +28,7 @@ public class ChessClient extends ChessPlayer {
 			if(line.startsWith("CONNECTED"))
 				output.println("ACK-" + userName);
 			System.out.println("Client: connected");
-			return line.split("-")[1];
+			return line.substring(line.indexOf("-") + 1);
 		} catch (Exception e) {
 			return "Error";
 		}
