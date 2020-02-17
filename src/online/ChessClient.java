@@ -19,18 +19,18 @@ public class ChessClient extends ChessPlayer {
     }
 
 	//When connected check if the opponent is free
-	public boolean connect(String serverAddress) {
+	public String connect(String serverAddress, String userName) {
 		try {
 			Socket socket = new Socket(serverAddress, PORT);
 			input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			output = new PrintWriter(socket.getOutputStream(), true);
 			String line = input.readLine();
-			if(line.equals("CONNECTED"))
-				output.println("ACK");
+			if(line.startsWith("CONNECTED"))
+				output.println("ACK-" + userName);
 			System.out.println("Client: connected");
-			return true;
+			return line.split("-")[1];
 		} catch (Exception e) {
-			return false;
+			return "Error";
 		}
 	}
 }

@@ -376,11 +376,13 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelJoin.setVisible(true);
         btnCancelJoin.setEnabled(true);
         btnJoin.setText("Connecting...");
-        if (((ChessClient) player).connect(ip)) {
+        String reply = ((ChessClient) player).connect(ip, user);
+        if (!reply.equals("Error")) {
             repaint();
             System.out.println(ip);
             btnCancelJoin.setEnabled(false);
             btnCancelJoin.setVisible(false);
+            gameOn.setText("Playing online against " + reply);
             enterGame();
         } else {
             JOptionPane.showMessageDialog(null, "Failed to connect to server.");
@@ -422,9 +424,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelHost.setEnabled(true);
         repaint();
         btnHost.setText("Waiting for client...");
-        if (((ChessServer) player).waitForClient()) {
+        String reply = ((ChessServer) player).waitForClient(user);
+        if (!reply.equals("Error")) {
             btnCancelHost.setEnabled(false);
             btnCancelHost.setVisible(false);
+            gameOn.setText("Playing online against " + reply);
             enterGame();
         } else {
             btnJoin.setEnabled(true);

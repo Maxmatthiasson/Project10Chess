@@ -2,6 +2,7 @@ package online;
 
 import enums.Color;
 
+import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,22 +36,23 @@ public class ChessServer extends ChessPlayer {
     }
 
     //Waiting for client to connect
-    public boolean waitForClient() {
+    public String waitForClient(String userName) {
         try {
             System.out.println("Waiting for client to connect");
             Socket socket = listener.accept();
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             output = new PrintWriter(socket.getOutputStream(), true);
             while (true) {
-                output.println("CONNECTED");
-                if (input.readLine().equalsIgnoreCase("ACK")) {
+                output.println("CONNECTED-" + userName);
+                String line = input.readLine();
+                if (line.startsWith("ACK")) {
                     System.out.println("Server: connected");
-                    return true;
+                    return line.split("-")[1];
                 }
             }
         } catch (Exception e) {
             System.out.println("Failed to connect to client");
-            return false;
+            return "Error";
         }
     }
 }
