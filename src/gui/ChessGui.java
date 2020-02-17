@@ -47,7 +47,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private JTextField userName;
     private Font messageFont = new Font("Verdana", Font.BOLD, 15);
     private Font connected = new Font("Verdana", Font.PLAIN, 10);
-    private String user;
 
     private boolean mousePressed = false;
     private boolean click = false;
@@ -245,7 +244,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
     public void run() {
         String line;
-        gameOn.setText("Opponent found ");
         while (true) {
             line = player.getCommand();
             process(line);
@@ -353,7 +351,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
      * Method for trying to join a game a server has started
      */
     private void joinGame() {
-        if (userName.getText().length() > 3) {
+        if (userName.getText().length() > 2) {
             String ip = JOptionPane.showInputDialog(null, "Enter the IP of the server");
             if (testIp(ip)) {
                 player = new ChessClient();
@@ -376,7 +374,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelJoin.setVisible(true);
         btnCancelJoin.setEnabled(true);
         btnJoin.setText("Connecting...");
-        String reply = ((ChessClient) player).connect(ip, user);
+        String reply = ((ChessClient) player).connect(ip, userName.getText());
         if (!reply.equals("Error")) {
             repaint();
             System.out.println(ip);
@@ -406,7 +404,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
      * Method for starting a server that a client can join
      */
     private void hostGame() {
-        if (userName.getText().length() > 3) {
+        if (userName.getText().length() > 2) {
             player = new ChessServer();
             Thread thrHost = new Thread(this::hostRunnable); // Invokes the method hostRunnable() below
             thrHost.start();
@@ -424,10 +422,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         btnCancelHost.setEnabled(true);
         repaint();
         btnHost.setText("Waiting for client...");
-        String reply = ((ChessServer) player).waitForClient(user);
+        String reply = ((ChessServer) player).waitForClient(userName.getText());
         if (!reply.equals("Error")) {
-            btnCancelHost.setEnabled(false);
-            btnCancelHost.setVisible(false);
             gameOn.setText("Playing online against " + reply);
             enterGame();
         } else {
@@ -436,9 +432,9 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
             btnHost.setText("Host game");
             if (btnCancelHost.isEnabled())
                 JOptionPane.showMessageDialog(null, "Failed to connect to client.");
-            btnCancelHost.setVisible(false);
-            btnCancelHost.setEnabled(false);
         }
+        btnCancelHost.setEnabled(false);
+        btnCancelHost.setVisible(false);
     }
 
     /**
@@ -476,7 +472,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
      */
     private void enterGame() {
         userName.setVisible(false);
-        user = userName.getText();
         startScreen.setVisible(false);
         btnJoin.setEnabled(false);
         btnJoin.setVisible(false);
@@ -499,7 +494,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
      * Send message to the other player
      */
     private void sendMessage() {
-        String pMessage = user + ": " + messageField.getText();
+        String pMessage = userName.getText() + ": " + messageField.getText();
         messageField.setText(""); //Removes text in the message field after sending a message.
         player.sendCommand("MESSAGE" + pMessage);
         messageBoard.append(pMessage + "\n");
