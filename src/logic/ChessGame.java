@@ -21,6 +21,7 @@ public class ChessGame {
     private Color check;
     private Color mate;
     private boolean castlingInProgress = false;
+    private Type promotion;
     private int moveCounter = 0;
 
     // 0 = bottom, size = top
@@ -147,17 +148,22 @@ public class ChessGame {
                     opponentPiece.isCaptured(false);
                 return false;
             } else
-                check = null; // If a move was successful, player isn't in check any more
+                check = null; // If a move was successful, current player isn't in check
 
             if (piece.getType() == Type.PAWN) {
                 resetCounter = true;
                 // Check for promotion
-                if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
-                        (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
-                    String[] buttons = {"Queen", "Rook", "Bishop", "Knight", "Pawn"};
-                    int returnValue = JOptionPane.showOptionDialog(null, "Promote your pawn?", "Promotion",
-                            JOptionPane.DEFAULT_OPTION, 0, null, buttons, 1);
-                    piece.setType(Type.valueOf(buttons[returnValue].toUpperCase()));
+                if (promotion == null) { // If the promotion is local
+                    if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
+                            (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
+                        String[] buttons = {"Queen", "Rook", "Bishop", "Knight", "Pawn"};
+                        int returnValue = JOptionPane.showOptionDialog(null, "Promote your pawn?", "Promotion",
+                                JOptionPane.DEFAULT_OPTION, 0, null, buttons, 1);
+                        piece.setType(Type.valueOf(buttons[returnValue].toUpperCase()));
+                    }
+                } else { // If the promotion is remote
+                    piece.setType(promotion);
+                    promotion = null;
                 }
             }
 
@@ -232,8 +238,12 @@ public class ChessGame {
         return false;
     }
 
-    public void isCastling() {
+    void isCastling() {
         castlingInProgress = true;
+    }
+
+    public void setPromotion(Type type) {
+        promotion = type;
     }
 
     /**

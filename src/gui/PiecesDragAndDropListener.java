@@ -1,5 +1,7 @@
 package gui;
 
+import enums.Type;
+
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -77,10 +79,12 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		if( dragPiece != null){
 			int x = evt.getPoint().x - dragOffsetX;
 			int y = evt.getPoint().y - dragOffsetY;
-			
+            Type orgType = dragPiece.getPiece().getType();
 			// set game piece to the new location if possible
 			chessGui.setNewPieceLocation(dragPiece, x, y);
-			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + x + "-" +  y);
+			Type newType = dragPiece.getPiece().getType();
+			String promotion = (orgType != newType ? "-" + newType.toString() : "");
+			chessGui.sendMove("MOVE" + sx + "-" + sy + "-" + x + "-" +  y + promotion);
 			chessGui.repaint();
 			dragPiece = null;
 		}

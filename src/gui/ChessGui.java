@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.*;
 
 import enums.Color;
+import enums.Type;
 import logic.Piece;
 import online.ChessClient;
 import online.ChessPlayer;
@@ -27,21 +28,6 @@ import logic.ChessGame;
 public class ChessGui extends JLayeredPane implements Runnable, MouseListener, FocusListener, KeyListener {
 
     private static final long serialVersionUID = -8207574964820892354L;
-
-    private static final int BOARD_START_X = 301;
-    private static final int BOARD_START_Y = 51;
-
-    private static final int SQUARE_WIDTH = 50;
-    private static final int SQUARE_HEIGHT = 50;
-
-    private static final int PIECE_WIDTH = 48;
-    private static final int PIECE_HEIGHT = 48;
-
-    private static final int PIECES_START_X = BOARD_START_X + (int) (SQUARE_WIDTH / 2.0 - PIECE_WIDTH / 2.0);
-    private static final int PIECES_START_Y = BOARD_START_Y + (int) (SQUARE_HEIGHT / 2.0 - PIECE_HEIGHT / 2.0);
-
-    private static final int DRAG_TARGET_SQUARE_START_X = BOARD_START_X - (int) (PIECE_WIDTH / 2.0);
-    private static final int DRAG_TARGET_SQUARE_START_Y = BOARD_START_Y - (int) (PIECE_HEIGHT / 2.0);
 
     private Image imgBackground = new ImageIcon("img/bo.png").getImage();
 
@@ -157,7 +143,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     }
 
     private void setupOpponentFoundLabel() {
-        gameOn.setText("Opponent found ");
+        gameOn.setText("Opponent found");
         gameOn.setForeground(java.awt.Color.WHITE);
         gameOn.setFont(connected);
         gameOn.setSize(200, 30);
@@ -278,6 +264,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
             toks = line.split("-");
             setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
                     Integer.parseInt(toks[3]));
+            if (toks.length == 5) // See if promotion information is sent
+                chessGame.setPromotion(Type.valueOf(toks[4]));
             repaint();
         }
     }
@@ -313,46 +301,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     }
 
     /**
-     * convert logical column into x coordinate
-     *
-     * @param column
-     * @return x coordinate for column
-     */
-    public static int convertColumnToX(int column) {
-        return PIECES_START_X + SQUARE_WIDTH * column;
-    }
-
-    /**
-     * convert logical row into y coordinate
-     *
-     * @param row
-     * @return y coordinate for row
-     */
-    public static int convertRowToY(int row) {
-        return PIECES_START_Y + SQUARE_HEIGHT * (Piece.ROW_8 - row);
-    }
-
-    /**
-     * convert x coordinate into logical column
-     *
-     * @param x
-     * @return logical column for x coordinate
-     */
-    private static int convertXToColumn(int x) {
-        return (x - DRAG_TARGET_SQUARE_START_X) / SQUARE_WIDTH;
-    }
-
-    /**
-     * convert y coordinate into logical row
-     *
-     * @param y
-     * @return logical row for y coordinate
-     */
-    private static int convertYToRow(int y) {
-        return Piece.ROW_8 - (y - DRAG_TARGET_SQUARE_START_Y) / SQUARE_HEIGHT;
-    }
-
-    /**
      * change location of given piece, if the location is valid. If the location
      * is not valid, move the piece back to its original position.
      *
@@ -361,8 +309,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
      * @param y
      */
     public void setNewPieceLocation(GuiPiece dragPiece, int x, int y) {
-        int targetRow = ChessGui.convertYToRow(y);
-        int targetColumn = ChessGui.convertXToColumn(x);
+        int targetRow = GuiHelper.convertYToRow(y);
+        int targetColumn = GuiHelper.convertXToColumn(x);
 
         if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8 || targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H ||
                 (dragPiece.getPiece().getRow() == targetRow && dragPiece.getPiece().getColumn() == targetColumn)) {
@@ -654,11 +602,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             System.out.println("Enter Typed");
-            String pMessage = user + ": " + messageField.getText();
-            messageField.setText(""); //Removes text in the setupMessageField after sending a message.
-
-            player.sendCommand("MESSAGE" + pMessage);
-            messageBoard.append(pMessage + "\n");
+            sendMessage();
         }
     }
 
