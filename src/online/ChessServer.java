@@ -3,6 +3,7 @@ package online;
 import enums.Color;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -25,6 +26,14 @@ public class ChessServer extends ChessPlayer {
         }
     }
 
+    public void stopSearchForClient() {
+        try {
+            listener.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     //Waiting for client to connect
     public boolean waitForClient() {
         try {
@@ -40,7 +49,7 @@ public class ChessServer extends ChessPlayer {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Failed to connect to client");
             return false;
         }
     }

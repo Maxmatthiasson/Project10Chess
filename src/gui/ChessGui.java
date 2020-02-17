@@ -47,6 +47,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
     private JButton btnJoin = new JButton("Join game");
     private JButton btnHost = new JButton("Host game");
+    private JButton btnCancelJoin = new JButton("X");
+    private JButton btnCancelHost = new JButton("X");
 
     private JLabel lblGameState;
     private JLabel gameOn = new JLabel("Searching for opponent");
@@ -67,6 +69,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private ChessPlayer player;
     private ChessGame chessGame;
     private List<GuiPiece> guiPieces = new ArrayList<>();
+
+    private Thread thrJoin;
 
     public ChessGui() throws IOException {
         setLayout(null);
@@ -95,6 +99,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         setupJoinButton();
         setupUserNameTextField();
         setupHostButton();
+        setupCancelButtons();
         setupIpLabel();
         applicationFrame();
     }
@@ -200,6 +205,21 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
         add(btnHost, 3, 0);
         btnHost.addActionListener(e -> hostGame());
         btnHost.addMouseListener(this);
+    }
+
+    private void setupCancelButtons() {
+        btnCancelJoin.setBounds(600, 350, 50, 50);
+        btnCancelJoin.setVisible(false);
+        btnCancelJoin.setEnabled(false);
+        btnCancelJoin.setBackground(java.awt.Color.RED);
+        btnCancelJoin.addActionListener(e -> cancelJoin());
+        add(btnCancelJoin, 3, 0);
+        btnCancelHost.setBounds(600, 415, 50, 50);
+        btnCancelHost.setVisible(false);
+        btnCancelHost.setEnabled(false);
+        btnCancelHost.setBackground(java.awt.Color.RED);
+        btnCancelHost.addActionListener(e -> cancelHost());
+        add(btnCancelHost, 3, 0);
     }
 
     private void setupUserNameTextField() {
@@ -382,12 +402,12 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
     private void joinGame() {
         if (userName.getText().length() > 3) {
-            String ip = JOptionPane.showInputDialog(null, "Enter address of server");
+            String ip = JOptionPane.showInputDialog(null, "Enter IP of server");
             if (testIp(ip)) {
                 player = new ChessClient();
                 Runnable runJoin = () -> joinRunnable(ip);
-                Thread join = new Thread(runJoin);
-                join.start();
+                thrJoin = new Thread(runJoin);
+                thrJoin.start();
             } else
                 JOptionPane.showMessageDialog(null, "IP not valid");
         }
@@ -396,13 +416,23 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private void joinRunnable(String ip) {
         btnJoin.setEnabled(false);
         btnHost.setEnabled(false);
+        btnCancelJoin.setVisible(true);
+        btnCancelJoin.setEnabled(true);
         btnJoin.setText("Connecting...");
         if (((ChessClient) player).connect(ip)) {
             repaint();
             System.out.println(ip);
             enterGame();
-        } else
+        } else {
             JOptionPane.showMessageDialog(null, "Failed to connect to server.");
+            cancelJoin();
+        }
+    }
+
+    private void cancelJoin() {
+        thrJoin.interrupt();
+        btnCancelJoin.setVisible(false);
+        btnCancelJoin.setEnabled(false);
         btnJoin.setEnabled(true);
         btnHost.setEnabled(true);
         btnJoin.setText("Join game");
@@ -411,27 +441,38 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
     private void hostGame() {
         if (userName.getText().length() > 3) {
             player = new ChessServer();
-            Thread host = new Thread(this::hostRunnable);
-            host.start();
+            Thread thrHost = new Thread(this::hostRunnable);
+            thrHost.start();
         }
     }
 
     private void hostRunnable() {
         btnJoin.setEnabled(false);
         btnHost.setEnabled(false);
+        btnCancelHost.setVisible(true);
+        btnCancelHost.setEnabled(true);
+        repaint();
         btnHost.setText("Waiting for client...");
         if (((ChessServer) player).waitForClient())
             enterGame();
-        else btnJoin.setEnabled(true);
-        {
+        else {
+            btnJoin.setEnabled(true);
             btnHost.setEnabled(true);
             btnHost.setText("Host game");
-            JOptionPane.showMessageDialog(null, "Failed to connect to client.");
+            if (btnCancelHost.isEnabled())
+                JOptionPane.showMessageDialog(null, "Failed to connect to client.");
+            btnCancelHost.setVisible(false);
+            btnCancelHost.setEnabled(false);
         }
     }
 
+    private void cancelHost() {
+        btnCancelHost.setEnabled(false);
+        ((ChessServer) player).stopSearchForClient();
+    }
+
     /**
-     * Tests wether an IP is valid
+     * Tests whether an IP is valid
      *
      * @param ip
      * @return
