@@ -173,7 +173,43 @@ class MoveValidatorTest {
         assertTrue(validator.isMoveValid(6, 2, 5, 3));
     }
 
-    
+    @org.junit.jupiter.api.Test
+    void isMoveValidRookMoveStraight() {
+        LinkedList<Piece> pieces = new LinkedList<>();
+        pieces.add(new Piece(Color.WHITE, Type.ROOK, 0, 0));
+        ChessGame game = new ChessGame(pieces);
+        MoveValidator validator = new MoveValidator(game);
+        assertTrue(validator.isMoveValid(0, 0, 4, 0));
+    }
+
+    @org.junit.jupiter.api.Test
+    void isMoveValidRookMoveStraightOverPiece() {
+        LinkedList<Piece> pieces = new LinkedList<>();
+        pieces.add(new Piece(Color.WHITE, Type.ROOK, 0, 0));
+        pieces.add(new Piece(Color.BLACK, Type.BISHOP, 2, 0));
+        ChessGame game = new ChessGame(pieces);
+        MoveValidator validator = new MoveValidator(game);
+        assertFalse(validator.isMoveValid(0, 0, 4, 0));
+    }
+
+    @org.junit.jupiter.api.Test
+    void isMoveValidRookCapture() {
+        LinkedList<Piece> pieces = new LinkedList<>();
+        pieces.add(new Piece(Color.WHITE, Type.ROOK, 0, 0));
+        pieces.add(new Piece(Color.BLACK, Type.BISHOP, 4, 0));
+        ChessGame game = new ChessGame(pieces);
+        MoveValidator validator = new MoveValidator(game);
+        assertTrue(validator.isMoveValid(0, 0, 4, 0));
+    }
+
+    @org.junit.jupiter.api.Test
+    void isMoveValidRookMoveDiagonal() {
+        LinkedList<Piece> pieces = new LinkedList<>();
+        pieces.add(new Piece(Color.WHITE, Type.ROOK, 0, 0));
+        ChessGame game = new ChessGame(pieces);
+        MoveValidator validator = new MoveValidator(game);
+        assertFalse(validator.isMoveValid(0, 0, 4, 4));
+    }
 
     @org.junit.jupiter.api.Test
     void checkValidator() {
