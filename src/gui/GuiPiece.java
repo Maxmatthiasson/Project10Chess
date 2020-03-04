@@ -19,6 +19,7 @@ public class GuiPiece {
     private int x;
     private int y;
     private Piece piece;
+    private boolean added = false;
 
     private static final Image imgWBishop = new ImageIcon("img/wb.png").getImage();
     private static final Image imgWKing = new ImageIcon("img/wk.png").getImage();
@@ -115,6 +116,12 @@ public class GuiPiece {
     public int getHeight() {
         return img.getHeight(null);
     }
+    public boolean getAdded() {
+    	return added;
+    }
+    public void setAdded(boolean added) {
+    		this.added = added;
+    }
 
     /**
      * Returns color of the chess piece
@@ -151,6 +158,9 @@ public class GuiPiece {
      * Returns a boolean
      * @return boolean
      */
+    public void setCaptured(Boolean isCaptured) {
+    	this.piece.isCaptured(isCaptured);
+    }
     public boolean isCaptured() {
         return this.piece.isCaptured();
     }
