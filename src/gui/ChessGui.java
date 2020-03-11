@@ -5,8 +5,9 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
+import java.util.Timer;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -40,14 +41,20 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private JButton btnCancelHost = new JButton("X");
 	private JButton soundButton = new JButton();
 
+
+
 	private JLabel lblGameState;
 	private JLabel lblPlayerColor;
 	private JLabel gameOn = new JLabel("Searching for opponent");
 	private JLabel infoP;
 	private JLabel startScreen;
 	private JLabel lblYourIP;
-	
+	private JLabel lblBlackTimer;
+	private JLabel lblWhiteTimer;
+	private JLabel clockIconLabel;
 
+
+	private ImageIcon clockIcon;
 	private ImageIcon soundicon = new ImageIcon("img/sound.png");
 	
 	private JTextArea messageBoard = new JTextArea();
@@ -59,6 +66,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private boolean mousePressed = false;
 	private boolean click = false;
 	private boolean sound = true;
+	private boolean playWithTime = false;
 
 	//	private GuiPiece guiPiece;
 	private ChessPlayer player;
@@ -70,11 +78,15 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 	private Thread thrJoin;
 
+	private int timePlayer = 0;
+
 	public ChessGui() throws IOException {
 		setLayout(null);
 
 		// create chess game
 		chessGame = new ChessGame();
+		chessGame.setGui(this);
+
 
 		// wrap game pieces into their graphical representation
 		createAndAddGuiPieces();
@@ -102,7 +114,10 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		setupIpLabel();
 		applicationFrame();
 		soundButton();
+		setupTimer();
 	}
+
+
 
 	public Color getColor() {
 		return player.getColor();
@@ -128,6 +143,22 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		lblPlayerColor.setFont(new Font("Verdana", Font.BOLD, 15));
 		lblPlayerColor.setForeground(java.awt.Color.WHITE);
 		add(lblPlayerColor);
+	}
+
+	private void setupTimer(){
+		clockIconLabel = new JLabel();
+		clockIcon = new ImageIcon("img/clock2.png");
+		clockIconLabel.setIcon(clockIcon);
+		lblBlackTimer = new JLabel("Black Timer");
+		lblWhiteTimer = new JLabel("White Timer");
+		lblBlackTimer.setForeground(java.awt.Color.WHITE);
+		lblWhiteTimer.setForeground(java.awt.Color.WHITE);
+		lblBlackTimer.setBounds(300, 10, 200, 50);
+		lblWhiteTimer.setBounds(590, 10, 200, 50);
+		clockIconLabel.setBounds(470,10, 50,40);
+		add(clockIconLabel);
+		add(lblBlackTimer);
+		add(lblWhiteTimer);
 	}
 
 	private void setupNewGameButton() {
@@ -233,11 +264,12 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private void setupJoinButton() {
 		btnJoin.setBounds(350, 350, 240, 50);
 		btnJoin.setVisible(true);
-		btnJoin.setBackground(java.awt.Color.BLUE);
-		btnJoin.setForeground(java.awt.Color.WHITE);
-		btnJoin.setFont(new Font("Tahoma", Font.BOLD, 20));
+		btnJoin.setBackground(java.awt.Color.WHITE);
+		btnJoin.setForeground(java.awt.Color.DARK_GRAY);
+		btnJoin.setFont(new Font("Tahoma", Font.BOLD, 15));
 		add(btnJoin, 3, 0);
 		btnJoin.addActionListener(e -> joinGame());
+		btnJoin.addMouseListener(this);
 	}
 
 	private void setupHostButton() {
@@ -250,6 +282,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		btnHost.addActionListener(e -> hostGame());
 		btnHost.addMouseListener(this);
 	}
+
+
 
 	private void setupCancelButtons() {
 		btnCancelJoin.setBounds(600, 350, 50, 50);
@@ -464,7 +498,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * Method for trying to join a game a server has started
 	 */
 	private void joinGame() {
-		if (userName.getText().length() > 2) {
+		if (userName.getText().length() > 2 && !userName.getText().equals("Username")) {
 			String ip = JOptionPane.showInputDialog(null, "Enter the IP of the server");
 			if (testIp(ip)) {
 				player = new ChessClient();
@@ -496,9 +530,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 			btnCancelJoin.setEnabled(false);
 			btnCancelJoin.setVisible(false);
 			gameOn.setText("Playing online against " + replies[0]);
+			timePlayer = Integer.parseInt(replies[2]);	// Time for the game
 			enterGame();
 			player.setColor(Color.valueOf(replies[1]));
 			lblPlayerColor.setText("You are: " + capitalizeString(replies[1]));
+
 		} else {
 			JOptionPane.showMessageDialog(null, "Failed to connect to server.");
 			cancelJoin();
@@ -521,10 +557,10 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * Method for starting a server that a client can join
 	 */
 	private void hostGame() {
-		if (userName.getText().length() > 2) {
-			player = new ChessServer();
+		if (userName.getText().length() > 2 && !userName.getText().equals("Username")) {
+			playWithTime();
+			player = new ChessServer(timePlayer);
 			newGameColor();
-
 			Thread thrHost = new Thread(this::hostRunnable); // Invokes the method hostRunnable() below
 			thrHost.start();
 		} else
@@ -599,6 +635,15 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		btnHost.setEnabled(false);
 		lblYourIP.setVisible(false);
 
+		// Not playing with time.
+		if(timePlayer == 0){
+			lblBlackTimer.setVisible(false);
+			lblWhiteTimer.setVisible(false);
+			clockIconLabel.setVisible(false);
+		}
+
+		//Initiates the timers for the players.
+		chessGame.setTimerForPlayers(timePlayer);
 		(new Thread(this)).start();
 	}
 
@@ -639,7 +684,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 				"Color choice",
 				JOptionPane.DEFAULT_OPTION,
 				JOptionPane.INFORMATION_MESSAGE,
-				null,
+				new ImageIcon("img/chess.png"),
 				options,
 				options[0]);
 		String newColor = choice == 0 ? "WHITE" : "BLACK";
@@ -650,12 +695,40 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	}
 
 	/**
+	 * Pop up window for time function.
+	 */
+	public void playWithTime(){
+		String[] options = {"Yes", "No"};
+		int choice = JOptionPane.showOptionDialog(null, "Do you want to play with time?",
+				"Time",
+				JOptionPane.DEFAULT_OPTION,
+				JOptionPane.INFORMATION_MESSAGE,
+				new ImageIcon("img/clock.png"),
+				options,
+				options[0]);
+
+		//Play with time
+		if(choice == 0){
+			SpinnerNumberModel sModel = new SpinnerNumberModel(1, 1, 60, 1);
+			JSpinner spinner = new JSpinner(sModel);
+			JFormattedTextField tf = ((JSpinner.DefaultEditor)spinner.getEditor()).getTextField();
+			tf.setEditable(false);
+			JOptionPane.showMessageDialog(null, spinner,"Choose minutes",JOptionPane.OK_OPTION,new ImageIcon("img/clock.png"));
+			this.timePlayer = (int)spinner.getValue() * 60;
+		}
+	}
+
+
+
+
+	/**
 	 * When clicking the button "New game", send a command to the other player and reset the board
 	 */
 	private void newGame() {
+		String newColor = newGameColor();
 		capPieces.clear();
 		player.sendCommand("####");
-		player.sendCommand("COLOR" + newGameColor());
+		player.sendCommand("COLOR" + newColor);
 		resetBoard();
 	}
 
@@ -664,15 +737,39 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 */
 	private void resetBoard() {
 		messageBoard.setText(null);
-
+		if(timePlayer != 0){
+			chessGame.cancelTimer();
+		}
 		// create chess game
 		chessGame = new ChessGame();
-		
+		chessGame.setGui(this);
+		chessGame.setTimerForPlayers(timePlayer);
 		guiPieces.clear();
 		capPieces.clear();
 		// wrap game pieces into their graphical representation
 		createAndAddGuiPieces();
 		repaint();
+	}
+
+	public void setTimerWhite(int timeWhite){
+		int min = timeWhite/60;
+		int seconds = timeWhite - (min * 60);
+		if(seconds < 10){
+			lblWhiteTimer.setText("White timer: " + min + ":0" + seconds);
+		}else{
+			lblWhiteTimer.setText("White timer: " + min + ":" + seconds);
+		}
+	}
+
+	public void setTimerBlack(int timeBlack){
+		int min = timeBlack/60;
+		int seconds = timeBlack - (min * 60);
+		if(seconds < 10){
+			lblBlackTimer.setText("Black timer: " + min + ":0" + seconds);
+		}else{
+			lblBlackTimer.setText("Black timer: " + min + ":" + seconds);
+		}
+
 	}
 
 	// If you click on the textFields the text gets removed and changes text color to black.
@@ -687,6 +784,10 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 			btnHost.setBackground(java.awt.Color.GREEN);
 			btnHost.setForeground(java.awt.Color.WHITE);
 		}
+		else if( e.getSource().equals(btnJoin) && !mousePressed){
+			btnJoin.setBackground(java.awt.Color.GREEN);
+			btnJoin.setForeground(java.awt.Color.WHITE);
+		}
 	}
 
 	@Override
@@ -695,6 +796,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		if (e.getSource().equals(btnHost) && !mousePressed) {
 			btnHost.setBackground(java.awt.Color.WHITE);
 			btnHost.setForeground(java.awt.Color.DARK_GRAY);
+		}
+
+		else if( e.getSource().equals(btnJoin) && !mousePressed){
+			btnJoin.setBackground(java.awt.Color.WHITE);
+			btnJoin.setForeground(java.awt.Color.DARK_GRAY);
 		}
 	}
 

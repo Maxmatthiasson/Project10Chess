@@ -1,13 +1,12 @@
 package logic;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.Timer;
 import java.util.stream.Collectors;
 
 import enums.Color;
 import enums.Type;
+import gui.ChessGui;
 
 import javax.swing.*;
 
@@ -23,6 +22,12 @@ public class ChessGame {
     private boolean castlingInProgress = false;
     private Type promotion;
     private int moveCounter = 0;
+    private int timeBlack;
+    private int timeWhite;
+    private ChessGui gui;
+    private Timer timer;
+    private boolean playingWithTime = true;
+
 
     // 0 = bottom, size = top
     private List<Piece> pieces = new ArrayList<>();
@@ -34,6 +39,7 @@ public class ChessGame {
      */
     public ChessGame() {
         startPositions();
+
     }
 
     // A constructor for testing purposes, get any starting condition you need
@@ -251,10 +257,16 @@ public class ChessGame {
      */
     public String getGameStateAsText() {
         String ret = "<html>";
-        if (mate != null)
+        if (mate != null) {
             ret += mate + " in mate<br>" + mate.reverse() + " wins!";
-        else
-            ret += gameState.toString().substring(0,1).toUpperCase() + gameState.toString().substring(1).toLowerCase() + "'s move" + (check != null ? "<br>" + check + " in check" : "");
+        }else if (timeWhite <= 0 && playingWithTime){
+            ret += "Time run out, Black wins!";
+        }else if(timeBlack <= 0 && playingWithTime){
+            ret += "Time run out, White wins!";
+        }
+        else {
+            ret += gameState.toString().substring(0, 1).toUpperCase() + gameState.toString().substring(1).toLowerCase() + "'s move" + (check != null ? "<br>" + check + " in check" : "");
+        }
         return ret + "</html>";
     }
 
@@ -280,14 +292,21 @@ public class ChessGame {
     private void checkEndConditions() {
         // check if game end condition has been reached
         //
-        if (mate != null || moveCounter == 50) {
+        if (mate != null || moveCounter == 50 || (timeBlack <= 0 && playingWithTime) || (timeWhite <= 0 && playingWithTime)) {
 
-            if (mate != null)
+            if (mate != null) {
                 System.out.println("Game over! " + mate + " won!");
-            else
+            }else if(timeWhite <= 0){
+                 System.out.println("Time run out, black wins");
+            }else if (timeBlack <= 0){
+                 System.out.println("Time run out, white wins");
+            }
+            else {
                 System.out.println("50 move rule, stalemate!");
-
+            }
             this.gameState = null;
+            this.timer.cancel();
+
         }
     }
 
@@ -326,5 +345,63 @@ public class ChessGame {
         res.append(letters);
 
         return res.toString();
+    }
+
+    /**
+     * Setting up timers for both players.
+     * Decreasing time for a player depending on whose turn it is.
+     */
+    public void setupTimer(){
+        timer = new java.util.Timer();
+        gui.setTimerWhite(timeWhite);
+        gui.setTimerBlack(timeBlack);
+
+        TimerTask timerTask = new TimerTask(){
+
+            @Override
+            public void run() {
+                //Black timer
+                if(gameState == Color.BLACK){
+                    timeBlack--;
+                    gui.setTimerBlack(timeBlack);
+                }
+                //White timer
+                else{
+                    timeWhite--;
+                    gui.setTimerWhite(timeWhite);
+                }
+
+                //If time runs out --> Game over
+                if(timeBlack <= 0){
+                    checkEndConditions();
+                }else if(timeWhite <= 0){
+                    checkEndConditions();
+                }
+            }
+        };
+
+        timer.scheduleAtFixedRate(timerTask,0,1000);
+    }
+
+    /**
+     Initiates timers for the players, olny if they want to play with time.
+     */
+    public void setTimerForPlayers(int time){
+        if(time != 0){
+            this.timeBlack = time;
+            this.timeWhite = time;
+            setupTimer();
+        }else{
+            playingWithTime = false;
+        }
+    }
+
+
+    public void cancelTimer(){
+        this.timer.cancel();
+    }
+
+    public void setGui(ChessGui gui){
+        this.gui = gui;
     }
 }

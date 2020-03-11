@@ -14,10 +14,12 @@ import java.net.Socket;
 public class ChessServer extends ChessPlayer {
 
     private ServerSocket listener;
-
+    private int time;
     //Creates a server on this computer
-    public ChessServer() {
+
+    public ChessServer(int time) {
         super(Color.WHITE);
+        this.time = time;
         try {
             listener = new ServerSocket(PORT);
         } catch (Exception e) {
@@ -42,7 +44,7 @@ public class ChessServer extends ChessPlayer {
             output = new PrintWriter(socket.getOutputStream(), true);
             while (true) {
                 String opponentColor = color.equals("WHITE") ? "BLACK" : "WHITE";
-                output.println("CONNECTED-" + userName + "-" + opponentColor);
+                output.println("CONNECTED-" + userName + "-" + opponentColor + "-" + time);  // Skicka tiden här
                 String line = input.readLine();
                 if (line.startsWith("ACK")) {
                     System.out.println("Server: connected");
@@ -54,4 +56,6 @@ public class ChessServer extends ChessPlayer {
             return "Error";
         }
     }
+
+
 }
