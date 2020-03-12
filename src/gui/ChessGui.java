@@ -674,9 +674,11 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
      * When clicking the button "New game", send a command to the other player and reset the board
      */
     private void newGame() {
-        capPieces.clear();
-        chessGame.sendCommand("####");
-        chessGame.sendCommand("COLOR" + newGameColor());
+        if (!(chessGame.getPlayer() instanceof ChessLocal)) {
+            capPieces.clear();
+            chessGame.sendCommand("####");
+            chessGame.sendCommand("COLOR" + newGameColor());
+        }
         resetBoard();
     }
 
@@ -687,7 +689,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
         messageBoard.setText(null);
 
         // create chess game
-        chessGame = new ChessGame(this);
+        chessGame.startPositions();
 
         guiPieces.clear();
         capPieces.clear();

@@ -49,7 +49,8 @@ public class ChessGame {
         this.pieces = pieces;
     }
 
-    private void startPositions() {
+    public void startPositions() {
+        pieces.clear();
         // create and place pieces
         // rook, knight, bishop, queen, king, bishop, knight, and rook
         createAndAddPiece(Color.WHITE, Type.ROOK, Piece.ROW_1, Piece.COLUMN_A);
@@ -89,6 +90,7 @@ public class ChessGame {
         for (int i = Piece.COLUMN_A; i <= Piece.COLUMN_H; i++) {
             createAndAddPiece(Color.BLACK, Type.PAWN, Piece.ROW_7, i);
         }
+        gameState = Color.WHITE;
     }
 
     /**
