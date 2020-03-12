@@ -14,12 +14,10 @@ import java.net.Socket;
 public class ChessServer extends ChessPlayer {
 
     private ServerSocket listener;
-    private int time;
     //Creates a server on this computer
 
-    public ChessServer(int time) {
+    public ChessServer() {
         super(Color.WHITE);
-        this.time = time;
         try {
             listener = new ServerSocket(PORT);
         } catch (Exception e) {
@@ -36,7 +34,7 @@ public class ChessServer extends ChessPlayer {
     }
 
     //Waiting for client to connect
-    public String waitForClient(String userName, String color) {
+    public String waitForClient(String userName, String color, int time) {
         try {
             System.out.println("Waiting for client to connect");
             Socket socket = listener.accept();

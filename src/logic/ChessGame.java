@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 import enums.Color;
 import enums.Type;
 import gui.ChessGui;
+import online.ChessClient;
+import online.ChessLocal;
+import online.ChessPlayer;
+import online.ChessServer;
 
 import javax.swing.*;
 
@@ -27,7 +31,7 @@ public class ChessGame {
     private ChessGui gui;
     private Timer timer;
     private boolean playingWithTime = true;
-
+    private ChessPlayer player;
 
     // 0 = bottom, size = top
     private List<Piece> pieces = new ArrayList<>();
@@ -37,7 +41,8 @@ public class ChessGame {
     /**
      * initialize game
      */
-    public ChessGame() {
+    public ChessGame(ChessGui gui) {
+        this.gui = gui;
         startPositions();
 
     }
@@ -47,7 +52,8 @@ public class ChessGame {
         this.pieces = pieces;
     }
 
-    private void startPositions() {
+    public void startPositions() {
+        pieces.clear();
         // create and place pieces
         // rook, knight, bishop, queen, king, bishop, knight, and rook
         createAndAddPiece(Color.WHITE, Type.ROOK, Piece.ROW_1, Piece.COLUMN_A);
@@ -87,6 +93,7 @@ public class ChessGame {
         for (int i = Piece.COLUMN_A; i <= Piece.COLUMN_H; i++) {
             createAndAddPiece(Color.BLACK, Type.PAWN, Piece.ROW_7, i);
         }
+        gameState = Color.WHITE;
     }
 
     /**
@@ -133,7 +140,6 @@ public class ChessGame {
         }
 
         Color opponentColor = (piece.getColor().reverse());
-        if (!castlingInProgress) {
 
             Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
 
@@ -143,8 +149,21 @@ public class ChessGame {
                 resetCounter = true;
             }
 
-            piece.setRow(targetRow);
-            piece.setColumn(targetColumn);
+            if (moveValidator.isValidCastlingMove(targetRow, targetColumn)) {
+                Piece castlingRook = moveValidator.getCastlingRook(targetRow, targetColumn);
+                if (castlingRook.getColumn() == 0) {
+                    piece.setColumn(piece.getColumn() - 2);
+                    castlingRook.setColumn(castlingRook.getColumn() + 3);
+                    castlingRook.touch();
+                } else {
+                    piece.setColumn(piece.getColumn() + 2);
+                    castlingRook.setColumn(castlingRook.getColumn() - 2);
+                    castlingRook.touch();
+                }
+            } else {
+                piece.setRow(targetRow);
+                piece.setColumn(targetColumn);
+            }
 
             if (moveValidator.checkValidator(piece.getColor())) {
                 System.out.println("illegal move, puts king in check");
@@ -174,10 +193,7 @@ public class ChessGame {
             }
 
             piece.touch();
-        } else {
-            castlingInProgress = false;
-            resetCounter = true;
-        }
+
         if (resetCounter)
             moveCounter = 0;
         else
@@ -252,6 +268,10 @@ public class ChessGame {
         promotion = type;
     }
 
+    public LinkedList<int[]> getValidMoves(Piece p) {
+        return moveValidator.getValidMoves(p);
+    }
+
     /**
      * @return current game state (one of ChessGame.GAME_STATE_..)
      */
@@ -287,6 +307,65 @@ public class ChessGame {
     private void changeGameState() {
         if (gameState != null)
             gameState = gameState.reverse();
+        if (player instanceof ChessLocal)
+            player.setColor(player.getColor().reverse());
+    }
+
+    public ChessPlayer getPlayer() {
+        return player;
+    }
+
+    public void start() {
+        if (!(player instanceof ChessLocal))
+            (new Thread(this::run)).start();
+    }
+
+    public void run() {
+        String line;
+        while (true) {
+            line = player.getCommand();
+            process(line);
+        }
+    }
+
+    public void setPlayer(String playerType) {
+        switch (playerType) {
+            case "HOST":
+                player = new ChessServer();
+                break;
+            case "JOIN":
+                player = new ChessClient();
+                break;
+            case "LOCAL":
+                player = new ChessLocal();
+                break;
+        }
+    }
+
+    public void sendCommand(String command) {
+        player.sendCommand(command);
+    }
+
+    private void process(String command) {
+        System.out.println("Process: " + command);
+        if (command.equals("####")) { // New game
+            gui.resetBoard();
+        } else if (command.startsWith("MESSAGE"))
+            gui.getMessage(command.substring(7));
+        else if (command.startsWith("MOVE")) {
+            System.out.println(command);
+            String line, toks[];
+            line = command.substring(4);
+            toks = line.split("-");
+            if (toks.length == 5) // See if promotion information is sent
+                setPromotion(Type.valueOf(toks[4]));
+            gui.setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
+                    Integer.parseInt(toks[3]));
+        } else if (command.startsWith("COLOR")) {
+            String color = command.substring(5);
+            player.setColor(Color.valueOf(color));
+            gui.setColor(player.getColor());
+        }
     }
 
     private void checkEndConditions() {

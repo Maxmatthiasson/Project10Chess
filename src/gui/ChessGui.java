@@ -5,18 +5,21 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Timer;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.*;
+
 import enums.Color;
 import enums.Type;
 import logic.Piece;
 import online.ChessClient;
+import online.ChessLocal;
 import online.ChessPlayer;
 import online.ChessServer;
 import logic.ChessGame;
@@ -29,7 +32,7 @@ import logic.ChessGame;
 /**
  * @author Murat, Alex and Nikola
  */
-public class ChessGui extends JLayeredPane implements Runnable, MouseListener, FocusListener, KeyListener {
+public class ChessGui extends JLayeredPane implements MouseListener, FocusListener, KeyListener {
 
 	private static final long serialVersionUID = -8207574964820892354L;
 
@@ -37,11 +40,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 	private JButton btnJoin = new JButton("Join game");
 	private JButton btnHost = new JButton("Host game");
+	private JButton btnLocal = new JButton("Local game");
 	private JButton btnCancelJoin = new JButton("X");
 	private JButton btnCancelHost = new JButton("X");
 	private JButton soundButton = new JButton();
-
-
+	private JButton btnSend = new JButton("Send");
 
 	private JLabel lblGameState;
 	private JLabel lblPlayerColor;
@@ -52,7 +55,9 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private JLabel lblBlackTimer;
 	private JLabel lblWhiteTimer;
 	private JLabel clockIconLabel;
+	private LinkedList<int[]> possibleMoves = new LinkedList<>();
 
+	Image dot = new ImageIcon("img/dot.png").getImage();
 
 	private ImageIcon clockIcon;
 	private ImageIcon soundicon = new ImageIcon("img/sound.png");
@@ -69,7 +74,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private boolean playWithTime = false;
 
 	//	private GuiPiece guiPiece;
-	private ChessPlayer player;
 	private ChessGame chessGame;
 	private List<GuiPiece> guiPieces = new ArrayList<>();
 	private List<GuiPiece> capPieces= new ArrayList<>();
@@ -80,12 +84,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 	private int timePlayer = 0;
 
-	public ChessGui() throws IOException {
+	public ChessGui() {
 		setLayout(null);
 
 		// create chess game
-		chessGame = new ChessGame();
-		chessGame.setGui(this);
+		chessGame = new ChessGame(this);
 
 
 		// wrap game pieces into their graphical representation
@@ -111,6 +114,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		setupUserNameTextField();
 		setupHostButton();
 		setupCancelButtons();
+		setupLocalButton();
 		setupIpLabel();
 		applicationFrame();
 		soundButton();
@@ -120,7 +124,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 
 	public Color getColor() {
-		return player.getColor();
+		return chessGame.getPlayer().getColor();
 	}
 
 	public Color getGameState() {
@@ -283,8 +287,6 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		btnHost.addMouseListener(this);
 	}
 
-
-
 	private void setupCancelButtons() {
 		btnCancelJoin.setBounds(600, 350, 50, 50);
 		btnCancelJoin.setVisible(false);
@@ -300,6 +302,16 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		add(btnCancelHost, 3, 0);
 	}
 
+	private void setupLocalButton() {
+		btnLocal.setBounds(350, 480, 240, 50);
+		btnLocal.setVisible(true);
+		btnLocal.setBackground(java.awt.Color.WHITE);
+		btnLocal.setForeground(java.awt.Color.DARK_GRAY);
+		btnLocal.setFont(new Font("Tahoma", Font.BOLD, 15));
+		add(btnLocal, 3, 0);
+		btnLocal.addActionListener(e -> localGame());
+	}
+
 	private void setupUserNameTextField() {
 		userName = new JTextField();
 		userName.setBounds(350, 285, 240, 40);
@@ -311,12 +323,17 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		add(userName, 3, 0); //JTextField dissapears when changing constraint to 2.
 	}
 
-	private void setupIpLabel() throws IOException {
-		String yourIP = InetAddress.getLocalHost().getHostAddress();
-		lblYourIP = new JLabel("Player IP: " + yourIP);
+	private void setupIpLabel() {
+		lblYourIP = new JLabel();
 		lblYourIP.setBounds(270, 670, 350, 100);
 		lblYourIP.setFont(new Font("Verdana", Font.BOLD, 20));
 		lblYourIP.setForeground(java.awt.Color.WHITE);
+		try {
+			String yourIP = InetAddress.getLocalHost().getHostAddress();
+			lblYourIP.setText("Player IP: " + yourIP);
+		} catch (UnknownHostException e) {
+			lblYourIP.setText("Couldn't get local IP");
+		}
 		add(lblYourIP, 3, 0);
 	}
 
@@ -331,44 +348,14 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	}
 
 	void sendMove(String move) {
-		player.sendCommand(move);
-		if(sound == true) {
+		chessGame.getPlayer().sendCommand(move);
+		if (sound == true) {
 			try {
 				ChessGui.play("sounds/blop.wav");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-	}
-	public void run() {
-		String line;
-		while (true) {
-			line = player.getCommand();
-			process(line);
-		}
-	}
-
-	private void process(String command) {
-		System.out.println("Process: " + command);
-		if (command.equals("####")) { // New game
-			resetBoard();
-		} else if (command.startsWith("MESSAGE"))
-			messageBoard.append(command.substring(7) + "\n");
-		else if (command.startsWith("MOVE")) {
-			System.out.println(command);
-			String line, toks[];
-			line = command.substring(4);
-			toks = line.split("-");
-			if (toks.length == 5) // See if promotion information is sent
-				chessGame.setPromotion(Type.valueOf(toks[4]));
-			setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
-					Integer.parseInt(toks[3]));
-			repaint();
-		} else if (command.startsWith("COLOR")) {
-			String color = command.substring(5);
-			player.setColor(Color.valueOf(color));
-			lblPlayerColor.setText("You are: " + capitalizeString(player.getColor().toString()));
 		}
 	}
 
@@ -395,12 +382,14 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 		g.drawImage(imgBackground, 0, 0, null);
 
-		//if (this.opponentFound == false) {
-		//  g.setColor(java.awt.Color.RED);
-		//} else {
-		g.setColor(java.awt.Color.GREEN);
-		//}
-		g.fillOval(15, 15, 30, 30);
+		if (!(chessGame.getPlayer() instanceof ChessLocal)) {
+			//if (this.opponentFound == false) {
+			//  g.setColor(java.awt.Color.RED);
+			//} else {
+			g.setColor(java.awt.Color.GREEN);
+			//}
+			g.fillOval(15, 15, 30, 30);
+		}
 		for (GuiPiece guiPiece : guiPieces) {
 			if (!guiPiece.isCaptured()) {
 				g.drawImage(guiPiece.getImage(), guiPiece.getX(), guiPiece.getY(), null);
@@ -422,6 +411,9 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 			}
 
 		}
+		for (int[] move : possibleMoves)
+			g.drawImage(dot, GuiHelper.convertColumnToX(move[1]) + 14, GuiHelper.convertRowToY(move[0]) + 14, null);
+
 		paintCaptured(g);
 
 		lblGameState.setText(chessGame.getGameStateAsText());
@@ -472,7 +464,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		}
 	}
 
-	private void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
+	public void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
 
 		GuiPiece dragPiece = null;
 		for (int i = guiPieces.size() - 1; i >= 0 && dragPiece == null; i--) {
@@ -498,11 +490,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * Method for trying to join a game a server has started
 	 */
 	private void joinGame() {
-		if (userName.getText().length() > 2 && !userName.getText().equals("Username")) {
+		if (userName.getText().length() > 2) {
 			String ip = JOptionPane.showInputDialog(null, "Enter the IP of the server");
-			if (testIp(ip)) {
-				player = new ChessClient();
-				Runnable runJoin = () -> joinRunnable(ip); // Invokes the joinRunnable() method below
+			if (testIp(ip) || ip.isEmpty()) {
+				chessGame.setPlayer("JOIN");
+				Runnable runJoin = () -> joinRunnable(ip.isEmpty() ? "127.0.0.1" : ip); // Invokes the joinRunnable() method below
 				thrJoin = new Thread(runJoin);
 				thrJoin.start();
 			} else
@@ -521,7 +513,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		btnCancelJoin.setVisible(true);
 		btnCancelJoin.setEnabled(true);
 		btnJoin.setText("Connecting...");
-		String reply = ((ChessClient) player).connect(ip, userName.getText());
+		String reply = ((ChessClient) chessGame.getPlayer()).connect(ip, userName.getText());
 		System.out.println(reply);
 		if (!reply.equals("Error")) {
 			String[] replies = reply.split("-");
@@ -532,9 +524,8 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 			gameOn.setText("Playing online against " + replies[0]);
 			timePlayer = Integer.parseInt(replies[2]);	// Time for the game
 			enterGame();
-			player.setColor(Color.valueOf(replies[1]));
+			chessGame.getPlayer().setColor(Color.valueOf(replies[1]));
 			lblPlayerColor.setText("You are: " + capitalizeString(replies[1]));
-
 		} else {
 			JOptionPane.showMessageDialog(null, "Failed to connect to server.");
 			cancelJoin();
@@ -557,10 +548,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * Method for starting a server that a client can join
 	 */
 	private void hostGame() {
-		if (userName.getText().length() > 2 && !userName.getText().equals("Username")) {
+		if (userName.getText().length() > 2) {
 			playWithTime();
-			player = new ChessServer(timePlayer);
+			chessGame.setPlayer("HOST");
 			newGameColor();
+
 			Thread thrHost = new Thread(this::hostRunnable); // Invokes the method hostRunnable() below
 			thrHost.start();
 		} else
@@ -571,14 +563,13 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * A method invoked by a Runnable (Thread) so the search for client doesn't freeze the system
 	 */
 	private void hostRunnable() {
-
 		btnJoin.setEnabled(false);
 		btnHost.setEnabled(false);
 		btnCancelHost.setVisible(true);
 		btnCancelHost.setEnabled(true);
 		repaint();
 		btnHost.setText("Waiting for client...");
-		String reply = ((ChessServer) player).waitForClient(userName.getText(), player.getColor().toString());
+		String reply = ((ChessServer) chessGame.getPlayer()).waitForClient(userName.getText(), chessGame.getPlayer().getColor().toString(), timePlayer);
 		if (!reply.equals("Error")) {
 			gameOn.setText("Playing online against " + reply);
 			enterGame();
@@ -598,7 +589,15 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 */
 	private void cancelHost() {
 		btnCancelHost.setEnabled(false);
-		((ChessServer) player).stopSearchForClient();
+		((ChessServer) chessGame.getPlayer()).stopSearchForClient();
+	}
+
+	private void localGame() {
+		chessGame.setPlayer("LOCAL");
+		gameOn.setVisible(false);
+		lblPlayerColor.setVisible(false);
+		btnSend.setEnabled(false);
+		enterGame();
 	}
 
 	/**
@@ -633,7 +632,11 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 		btnJoin.setVisible(false);
 		btnHost.setVisible(false);
 		btnHost.setEnabled(false);
+		btnLocal.setEnabled(false);
+		btnLocal.setVisible(false);
 		lblYourIP.setVisible(false);
+
+		addMouseMotionListener(new ChessMoveListener());
 
 		// Not playing with time.
 		if(timePlayer == 0){
@@ -644,7 +647,7 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 
 		//Initiates the timers for the players.
 		chessGame.setTimerForPlayers(timePlayer);
-		(new Thread(this)).start();
+		chessGame.start();
 	}
 
 	/**
@@ -671,9 +674,18 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	private void sendMessage() {
 		String pMessage = userName.getText() + ": " + messageField.getText();
 		messageField.setText(""); //Removes text in the message field after sending a message.
-		player.sendCommand("MESSAGE" + pMessage);
+		chessGame.sendCommand("MESSAGE" + pMessage);
 		messageBoard.append(pMessage + "\n");
 	}
+
+	public void getMessage(String message) {
+		messageBoard.append(message + "\n");
+	}
+
+	public void setColor(Color color) {
+		lblPlayerColor.setText("You are: " + capitalizeString(color.toString()));
+	}
+
 
 	/**
 	 * Asks for a new side to play on and sends the appropriate color to the opponent.
@@ -684,12 +696,12 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 				"Color choice",
 				JOptionPane.DEFAULT_OPTION,
 				JOptionPane.INFORMATION_MESSAGE,
-				new ImageIcon("img/chess.png"),
+				null,
 				options,
 				options[0]);
 		String newColor = choice == 0 ? "WHITE" : "BLACK";
 		String opponentColor = newColor == "WHITE" ? "BLACK" : "WHITE";
-		player.setColor(Color.valueOf(newColor));
+		chessGame.getPlayer().setColor(Color.valueOf(newColor));
 		lblPlayerColor.setText("You are: " + capitalizeString(newColor));
 		return opponentColor;
 	}
@@ -725,25 +737,28 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 	 * When clicking the button "New game", send a command to the other player and reset the board
 	 */
 	private void newGame() {
-		String newColor = newGameColor();
-		capPieces.clear();
-		player.sendCommand("####");
-		player.sendCommand("COLOR" + newColor);
+		if (!(chessGame.getPlayer() instanceof ChessLocal)) {
+			capPieces.clear();
+			chessGame.sendCommand("####");
+			chessGame.sendCommand("COLOR" + newGameColor());
+		}
 		resetBoard();
 	}
 
 	/**
 	 * Clear the chat and put all pieces back to their original places
 	 */
-	private void resetBoard() {
+	public void resetBoard() {
 		messageBoard.setText(null);
 		if(timePlayer != 0){
 			chessGame.cancelTimer();
 		}
-		// create chess game
-		chessGame = new ChessGame();
-		chessGame.setGui(this);
+
 		chessGame.setTimerForPlayers(timePlayer);
+
+		// create chess game
+		chessGame.startPositions();
+
 		guiPieces.clear();
 		capPieces.clear();
 		// wrap game pieces into their graphical representation
@@ -832,35 +847,74 @@ public class ChessGui extends JLayeredPane implements Runnable, MouseListener, F
 			userName.setText("");
 			userName.setForeground(java.awt.Color.BLACK);
 		}
+
 		/*if (e.getSource().equals(opponent) && (opponent.getText().equals("IP-Address"))) {
             this.opponent.setText("");
             this.opponent.setForeground(java.awt.Color.BLACK);
         }*/
-	}
+    }
 
-	@Override
-	public void focusLost(FocusEvent e) {
-	}
+    @Override
+    public void focusLost(FocusEvent e) {
+    }
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-	}
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			System.out.println("Enter Typed");
-			sendMessage();
-		}
-	}
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+            System.out.println("Enter Typed");
+            sendMessage();
+        }
+    }
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-	}
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
 
-	//Starts the game
-	public static void main(String[] args) throws IOException {
-		new ChessGui();
+    //Starts the game
+    public static void main(String[] args) {
+        new ChessGui();
 
-	}
+    }
+
+    private class ChessMoveListener implements MouseMotionListener {
+        int savedRow = 0, savedCol = 0;
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+
+            int row = GuiHelper.yToRow(e.getY());
+            int col = GuiHelper.xToCol(e.getX());
+            //System.out.println("Row: " + row + ", Col: " + col);
+            if (row > -1 && row < 8 && col > -1 && col < 8) {
+                if (savedRow != row || savedCol != col) {
+                    savedRow = row;
+                    savedCol = col;
+                    Piece p = chessGame.getNonCapturedPieceAtLocation(row, col);
+
+                    if (p != null && p.getColor() == chessGame.getGameState() && p.getColor() == chessGame.getPlayer().getColor()) {
+                        LinkedList<int[]> temp = chessGame.getValidMoves(p);
+                        if (temp != null)
+                            possibleMoves = temp;
+                        ChessGui.this.repaint();
+                    } else {
+                        possibleMoves.clear();
+                        repaint();
+                    }
+                }
+            } else {
+                savedRow = -1;
+                savedCol = -1;
+                possibleMoves.clear();
+                ChessGui.this.repaint();
+            }
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+        }
+    }
 }

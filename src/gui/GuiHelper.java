@@ -50,6 +50,13 @@ public class GuiHelper {
         return (x - DRAG_TARGET_SQUARE_START_X) / SQUARE_WIDTH;
     }
 
+    public static int xToCol(int x) {
+        if (x < BOARD_START_X)
+            return -1;
+        else
+            return (x - BOARD_START_X) / SQUARE_WIDTH;
+    }
+
     /**
      * convert y coordinate into logical row
      *
@@ -58,5 +65,9 @@ public class GuiHelper {
      */
     public static int convertYToRow(int y) {
         return Piece.ROW_8 - (y - DRAG_TARGET_SQUARE_START_Y) / SQUARE_HEIGHT;
+    }
+
+    public static int yToRow(int y) {
+        return 7 - (y - BOARD_START_Y) / SQUARE_HEIGHT;
     }
 }
