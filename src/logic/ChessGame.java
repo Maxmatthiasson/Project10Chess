@@ -144,15 +144,16 @@ public class ChessGame {
                 resetCounter = true;
             }
 
-            if (moveValidator.isValidCastlingMove()) {
-                if (opponentPiece.getColumn() == 0) {
+            if (moveValidator.isValidCastlingMove(targetRow, targetColumn)) {
+                Piece castlingRook = moveValidator.getCastlingRook(targetRow, targetColumn);
+                if (castlingRook.getColumn() == 0) {
                     piece.setColumn(piece.getColumn() - 2);
-                    opponentPiece.setColumn(opponentPiece.getColumn() + 3);
-                    opponentPiece.touch();
+                    castlingRook.setColumn(castlingRook.getColumn() + 3);
+                    castlingRook.touch();
                 } else {
                     piece.setColumn(piece.getColumn() + 2);
-                    opponentPiece.setColumn(opponentPiece.getColumn() - 2);
-                    opponentPiece.touch();
+                    castlingRook.setColumn(castlingRook.getColumn() - 2);
+                    castlingRook.touch();
                 }
             } else {
                 piece.setRow(targetRow);

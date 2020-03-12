@@ -44,6 +44,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
     private JButton btnCancelJoin = new JButton("X");
     private JButton btnCancelHost = new JButton("X");
     private JButton soundButton = new JButton();
+    private JButton btnSend = new JButton("Send");
 
     private JLabel lblGameState;
     private JLabel lblPlayerColor;
@@ -159,11 +160,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
     }
 
     private void sendButton() {
-        JButton send = new JButton("Send");
-        send.setSize(100, 50);
-        send.setLocation(630, 693);
-        send.addActionListener(e -> sendMessage());
-        add(send);
+        btnSend.setSize(100, 50);
+        btnSend.setLocation(630, 693);
+        btnSend.addActionListener(e -> sendMessage());
+        add(btnSend);
     }
 
     private void setupMessageField() {
@@ -332,7 +332,6 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
     }
 
 
-
     /**
      * Capitalizes the first letter in the string and returns it.
      *
@@ -358,12 +357,14 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
         g.drawImage(imgBackground, 0, 0, null);
 
-        //if (this.opponentFound == false) {
-        //  g.setColor(java.awt.Color.RED);
-        //} else {
-        g.setColor(java.awt.Color.GREEN);
-        //}
-        g.fillOval(15, 15, 30, 30);
+        if (!(chessGame.getPlayer() instanceof ChessLocal)) {
+            //if (this.opponentFound == false) {
+            //  g.setColor(java.awt.Color.RED);
+            //} else {
+            g.setColor(java.awt.Color.GREEN);
+            //}
+            g.fillOval(15, 15, 30, 30);
+        }
         for (GuiPiece guiPiece : guiPieces) {
             if (!guiPiece.isCaptured()) {
                 g.drawImage(guiPiece.getImage(), guiPiece.getX(), guiPiece.getY(), null);
@@ -565,6 +566,9 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
     private void localGame() {
         chessGame.setPlayer("LOCAL");
+        gameOn.setVisible(false);
+        lblPlayerColor.setVisible(false);
+        btnSend.setEnabled(false);
         enterGame();
     }
 
@@ -771,7 +775,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
     }
 
     //Starts the game
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         new ChessGui();
 
     }
@@ -784,7 +788,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
             int row = GuiHelper.yToRow(e.getY());
             int col = GuiHelper.xToCol(e.getX());
-            System.out.println("Row: " + row + ", Col: " + col);
+            //System.out.println("Row: " + row + ", Col: " + col);
             if (row > -1 && row < 8 && col > -1 && col < 8) {
                 if (savedRow != row || savedCol != col) {
                     savedRow = row;

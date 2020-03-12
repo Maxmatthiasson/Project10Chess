@@ -446,7 +446,7 @@ class MoveValidatorTest {
         pieces.add(new Piece(Color.WHITE, Type.ROOK,0, 0));
         ChessGame game = new ChessGame(pieces);
         MoveValidator validator = new MoveValidator(game);
-        assertTrue(validator.isMoveValid(0,4, 0, 0));
+        assertTrue(validator.isMoveValid(0,4, 0, 2));
     }
 
     @org.junit.jupiter.api.Test
