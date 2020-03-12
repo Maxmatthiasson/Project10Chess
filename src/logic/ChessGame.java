@@ -127,7 +127,6 @@ public class ChessGame {
         }
 
         Color opponentColor = (piece.getColor().reverse());
-        if (!castlingInProgress) {
 
             Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
 
@@ -137,8 +136,20 @@ public class ChessGame {
                 resetCounter = true;
             }
 
-            piece.setRow(targetRow);
-            piece.setColumn(targetColumn);
+            if (moveValidator.isValidCastlingMove()) {
+                if (opponentPiece.getColumn() == 0) {
+                    piece.setColumn(piece.getColumn() - 2);
+                    opponentPiece.setColumn(opponentPiece.getColumn() + 3);
+                    opponentPiece.touch();
+                } else {
+                    piece.setColumn(piece.getColumn() + 2);
+                    opponentPiece.setColumn(opponentPiece.getColumn() - 2);
+                    opponentPiece.touch();
+                }
+            } else {
+                piece.setRow(targetRow);
+                piece.setColumn(targetColumn);
+            }
 
             if (moveValidator.checkValidator(piece.getColor())) {
                 System.out.println("illegal move, puts king in check");
@@ -168,10 +179,7 @@ public class ChessGame {
             }
 
             piece.touch();
-        } else {
-            castlingInProgress = false;
-            resetCounter = true;
-        }
+
         if (resetCounter)
             moveCounter = 0;
         else
@@ -244,6 +252,10 @@ public class ChessGame {
 
     public void setPromotion(Type type) {
         promotion = type;
+    }
+
+    public LinkedList<int[]> getValidMoves(Piece p) {
+        return moveValidator.getValidMoves(p);
     }
 
     /**
