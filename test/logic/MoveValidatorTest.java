@@ -5,6 +5,7 @@ import enums.Type;
 
 import java.util.LinkedList;
 
+import gui.ChessGui;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -215,14 +216,14 @@ class MoveValidatorTest {
      //Test knight moves
     @org.junit.jupiter.api.Test
     void isMoveValidKnightMove() {
-        ChessGame game = new ChessGame();
+        ChessGame game = new ChessGame(new ChessGui());
         MoveValidator validator = new MoveValidator(game);
         assertTrue(validator.isMoveValid(0, 1, 2, 0));
     }
 
     @org.junit.jupiter.api.Test
     void isMoveValidKnightInvalidMove() {
-        ChessGame game = new ChessGame();
+        ChessGame game = new ChessGame(new ChessGui());
         MoveValidator validator = new MoveValidator(game);
         assertFalse(validator.isMoveValid(0, 1, 2, 1));
     }
@@ -230,7 +231,7 @@ class MoveValidatorTest {
 
     @org.junit.jupiter.api.Test
     void isMoveValidKnightInvalidMove2() {
-        ChessGame game = new ChessGame();
+        ChessGame game = new ChessGame(new ChessGui());
         MoveValidator validator = new MoveValidator(game);
         assertFalse(validator.isMoveValid(0, 1, 1, 3));
     }

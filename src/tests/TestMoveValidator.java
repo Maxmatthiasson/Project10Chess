@@ -1,12 +1,13 @@
 package tests;
 
+import gui.ChessGui;
 import logic.Piece;
 import logic.ChessGame;
 import logic.MoveValidator;
 
 public class TestMoveValidator {
     public static void main(String[] args) {
-        ChessGame ch = new ChessGame();
+        ChessGame ch = new ChessGame(new ChessGui());
         MoveValidator mo = new MoveValidator(ch);
         boolean isValid;
 

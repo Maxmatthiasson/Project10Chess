@@ -11,7 +11,7 @@ public abstract class ChessPlayer {
     static final int PORT = 9001;
     BufferedReader input;
     PrintWriter output;
-    private Color color;
+    Color color;
 
     ChessPlayer(Color color) {
         this.color = color;

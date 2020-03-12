@@ -8,6 +8,11 @@ import java.util.stream.Collectors;
 
 import enums.Color;
 import enums.Type;
+import gui.ChessGui;
+import online.ChessClient;
+import online.ChessLocal;
+import online.ChessPlayer;
+import online.ChessServer;
 
 import javax.swing.*;
 
@@ -23,6 +28,8 @@ public class ChessGame {
     private boolean castlingInProgress = false;
     private Type promotion;
     private int moveCounter = 0;
+    private ChessPlayer player;
+    private ChessGui gui;
 
     // 0 = bottom, size = top
     private List<Piece> pieces = new ArrayList<>();
@@ -32,7 +39,8 @@ public class ChessGame {
     /**
      * initialize game
      */
-    public ChessGame() {
+    public ChessGame(ChessGui gui) {
+        this.gui = gui;
         startPositions();
     }
 
@@ -287,6 +295,65 @@ public class ChessGame {
     private void changeGameState() {
         if (gameState != null)
             gameState = gameState.reverse();
+        if (player instanceof ChessLocal)
+            player.setColor(player.getColor().reverse());
+    }
+
+    public ChessPlayer getPlayer() {
+        return player;
+    }
+
+    public void start() {
+        if (!(player instanceof ChessLocal))
+            (new Thread(this::run)).start();
+    }
+
+    public void run() {
+        String line;
+        while (true) {
+            line = player.getCommand();
+            process(line);
+        }
+    }
+
+    public void setPlayer(String playerType) {
+        switch (playerType) {
+            case "HOST":
+                player = new ChessServer();
+                break;
+            case "JOIN":
+                player = new ChessClient();
+                break;
+            case "LOCAL":
+                player = new ChessLocal();
+                break;
+        }
+    }
+
+    public void sendCommand(String command) {
+        player.sendCommand(command);
+    }
+
+    private void process(String command) {
+        System.out.println("Process: " + command);
+        if (command.equals("####")) { // New game
+            gui.resetBoard();
+        } else if (command.startsWith("MESSAGE"))
+            gui.getMessage(command.substring(7));
+        else if (command.startsWith("MOVE")) {
+            System.out.println(command);
+            String line, toks[];
+            line = command.substring(4);
+            toks = line.split("-");
+            if (toks.length == 5) // See if promotion information is sent
+                setPromotion(Type.valueOf(toks[4]));
+            gui.setNewPieceLocationN(Integer.parseInt(toks[0]), Integer.parseInt(toks[1]), Integer.parseInt(toks[2]),
+                    Integer.parseInt(toks[3]));
+        } else if (command.startsWith("COLOR")) {
+            String color = command.substring(5);
+            player.setColor(Color.valueOf(color));
+            gui.setColor(player.getColor());
+        }
     }
 
     private void checkEndConditions() {
