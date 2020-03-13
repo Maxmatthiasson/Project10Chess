@@ -68,6 +68,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private Font messageFont = new Font("Verdana", Font.BOLD, 15);
 	private Font connected = new Font("Verdana", Font.PLAIN, 10);
 
+	private PiecesDragAndDropListener listener;
+
 	private boolean mousePressed = false;
 	private boolean click = false;
 	private boolean sound = true;
@@ -95,7 +97,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		createAndAddGuiPieces();
 
 		// add listeners to enable drag and drop
-		PiecesDragAndDropListener listener = new PiecesDragAndDropListener(guiPieces, this);
+		listener = new PiecesDragAndDropListener(guiPieces, this);
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
 
@@ -170,7 +172,6 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		newGame.setBounds(50, 350, 210, 50);
 		newGame.addActionListener(e -> newGame());
 		add(newGame);
-		
 	}
 
 	private void setupMessageBoard() {
@@ -186,11 +187,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	}
 
 	private void sendButton() {
-		JButton send = new JButton("Send");
-		send.setSize(100, 50);
-		send.setLocation(630, 693);
-		send.addActionListener(e -> sendMessage());
-		add(send);
+		btnSend.setSize(100, 50);
+		btnSend.setLocation(630, 693);
+		btnSend.addActionListener(e -> sendMessage());
+		add(btnSend);
 	}
 
 	private void setupMessageField() {
@@ -310,6 +310,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		btnLocal.setFont(new Font("Tahoma", Font.BOLD, 15));
 		add(btnLocal, 3, 0);
 		btnLocal.addActionListener(e -> localGame());
+		btnLocal.addMouseListener(this);
 	}
 
 	private void setupUserNameTextField() {
@@ -393,8 +394,6 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		for (GuiPiece guiPiece : guiPieces) {
 			if (!guiPiece.isCaptured()) {
 				g.drawImage(guiPiece.getImage(), guiPiece.getX(), guiPiece.getY(), null);
-
-
 			}
 
 			else if(guiPiece.isCaptured() && guiPiece.getAdded() == false) {
@@ -415,6 +414,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 			g.drawImage(dot, GuiHelper.convertColumnToX(move[1]) + 14, GuiHelper.convertRowToY(move[0]) + 14, null);
 
 		paintCaptured(g);
+		if (listener.getDragPiece() != null)
+			g.drawImage(listener.getDragPiece().getImage(), listener.getDragPiece().getX(), listener.getDragPiece().getY(), null);
 
 		lblGameState.setText(chessGame.getGameStateAsText());
 	}
@@ -510,6 +511,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private void joinRunnable(String ip) {
 		btnJoin.setEnabled(false);
 		btnHost.setEnabled(false);
+		btnLocal.setEnabled(false);
 		btnCancelJoin.setVisible(true);
 		btnCancelJoin.setEnabled(true);
 		btnJoin.setText("Connecting...");
@@ -541,6 +543,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		btnCancelJoin.setEnabled(false);
 		btnJoin.setEnabled(true);
 		btnHost.setEnabled(true);
+		btnLocal.setEnabled(true);
 		btnJoin.setText("Join game");
 	}
 
@@ -565,6 +568,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private void hostRunnable() {
 		btnJoin.setEnabled(false);
 		btnHost.setEnabled(false);
+		btnLocal.setEnabled(false);
 		btnCancelHost.setVisible(true);
 		btnCancelHost.setEnabled(true);
 		repaint();
@@ -576,6 +580,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		} else {
 			btnJoin.setEnabled(true);
 			btnHost.setEnabled(true);
+			btnLocal.setEnabled(true);
 			btnHost.setText("Host game");
 			if (btnCancelHost.isEnabled())
 				JOptionPane.showMessageDialog(null, "Failed to connect to client.");
@@ -730,9 +735,6 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		}
 	}
 
-
-
-
 	/**
 	 * When clicking the button "New game", send a command to the other player and reset the board
 	 */
@@ -787,6 +789,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
 	}
 
+	public void clearPossibleMoves() {
+		possibleMoves.clear();
+	}
+
 	// If you click on the textFields the text gets removed and changes text color to black.
 	@Override
 	public void mouseClicked(MouseEvent e) {}
@@ -798,10 +804,12 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		if (e.getSource().equals(btnHost) && !mousePressed) {
 			btnHost.setBackground(java.awt.Color.GREEN);
 			btnHost.setForeground(java.awt.Color.WHITE);
-		}
-		else if( e.getSource().equals(btnJoin) && !mousePressed){
+		} else if( e.getSource().equals(btnJoin) && !mousePressed){
 			btnJoin.setBackground(java.awt.Color.GREEN);
 			btnJoin.setForeground(java.awt.Color.WHITE);
+		} else if( e.getSource().equals(btnLocal) && !mousePressed){
+			btnLocal.setBackground(java.awt.Color.GREEN);
+			btnLocal.setForeground(java.awt.Color.WHITE);
 		}
 	}
 
@@ -811,11 +819,12 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		if (e.getSource().equals(btnHost) && !mousePressed) {
 			btnHost.setBackground(java.awt.Color.WHITE);
 			btnHost.setForeground(java.awt.Color.DARK_GRAY);
-		}
-
-		else if( e.getSource().equals(btnJoin) && !mousePressed){
+		} else if( e.getSource().equals(btnJoin) && !mousePressed){
 			btnJoin.setBackground(java.awt.Color.WHITE);
 			btnJoin.setForeground(java.awt.Color.DARK_GRAY);
+		} else if( e.getSource().equals(btnLocal) && !mousePressed){
+			btnLocal.setBackground(java.awt.Color.WHITE);
+			btnLocal.setForeground(java.awt.Color.DARK_GRAY);
 		}
 	}
 
@@ -866,7 +875,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             System.out.println("Enter Typed");
-            sendMessage();
+            btnSend.doClick();
         }
     }
 
@@ -902,15 +911,14 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
                         ChessGui.this.repaint();
                     } else {
                         possibleMoves.clear();
-                        repaint();
                     }
                 }
             } else {
                 savedRow = -1;
                 savedCol = -1;
                 possibleMoves.clear();
-                ChessGui.this.repaint();
             }
+			repaint();
         }
 
         @Override

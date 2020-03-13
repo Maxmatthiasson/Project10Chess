@@ -28,6 +28,10 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		this.chessGui = chessGui;
 	}
 
+	public GuiPiece getDragPiece() {
+		return dragPiece;
+	}
+
 	@Override
 	public void mouseClicked(MouseEvent arg0) {}
 
@@ -88,6 +92,7 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 			chessGui.repaint();
 			dragPiece = null;
 		}
+		chessGui.clearPossibleMoves();
 	}
 
 	@Override
