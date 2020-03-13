@@ -54,12 +54,12 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private JLabel lblYourIP;
 	private JLabel lblBlackTimer;
 	private JLabel lblWhiteTimer;
-	private JLabel clockIconLabel;
+	private JLabel whiteTimerImage;
+	private JLabel blackTimerImage;
 	private LinkedList<int[]> possibleMoves = new LinkedList<>();
 
-	Image dot = new ImageIcon("img/dot.png").getImage();
+	private Image dot = new ImageIcon("img/dot.png").getImage();
 
-	private ImageIcon clockIcon;
 	private ImageIcon soundicon = new ImageIcon("img/sound.png");
 	
 	private JTextArea messageBoard = new JTextArea();
@@ -152,19 +152,28 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	}
 
 	private void setupTimer(){
-		clockIconLabel = new JLabel();
-		clockIcon = new ImageIcon("img/clock2.png");
-		clockIconLabel.setIcon(clockIcon);
+		ImageIcon blackTimerIcon = new ImageIcon("img/blackTimer.png");
+		ImageIcon whiteTimerIcon = new ImageIcon("img/whiteTimer.png");
+
+		blackTimerImage  = new JLabel();
+		whiteTimerImage  = new JLabel();
+		blackTimerImage.setIcon(blackTimerIcon);
+		whiteTimerImage.setIcon(whiteTimerIcon);
+
 		lblBlackTimer = new JLabel("Black Timer");
 		lblWhiteTimer = new JLabel("White Timer");
-		lblBlackTimer.setForeground(java.awt.Color.WHITE);
+		lblBlackTimer.setForeground(java.awt.Color.BLACK);
 		lblWhiteTimer.setForeground(java.awt.Color.WHITE);
-		lblBlackTimer.setBounds(300, 10, 200, 50);
+
+		lblBlackTimer.setBounds(323, 10, 200, 50);
 		lblWhiteTimer.setBounds(590, 10, 200, 50);
-		clockIconLabel.setBounds(470,10, 50,40);
-		add(clockIconLabel);
+		blackTimerImage.setBounds(298,25,20,20);
+		whiteTimerImage.setBounds(565,25,20,20);
+		
 		add(lblBlackTimer);
 		add(lblWhiteTimer);
+		add(whiteTimerImage);
+		add(blackTimerImage);
 	}
 
 	private void setupNewGameButton() {
@@ -598,6 +607,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	}
 
 	private void localGame() {
+		playWithTime();
 		chessGame.setPlayer("LOCAL");
 		gameOn.setVisible(false);
 		lblPlayerColor.setVisible(false);
@@ -647,7 +657,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		if(timePlayer == 0){
 			lblBlackTimer.setVisible(false);
 			lblWhiteTimer.setVisible(false);
-			clockIconLabel.setVisible(false);
+			whiteTimerImage.setVisible(false);
+			blackTimerImage.setVisible(false);
 		}
 
 		//Initiates the timers for the players.
