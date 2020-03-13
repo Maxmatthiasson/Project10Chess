@@ -133,8 +133,8 @@ public class ChessGame {
             return false;
         }
 
-        if (!moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow,
-                targetColumn)) {
+        Move[] moves = moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        if (moves == null) {
             System.out.println("move invalid");
             return false;
         }
@@ -233,7 +233,8 @@ public class ChessGame {
      */
     public Piece getNonCapturedPieceAtLocation(int row, int column) {
         for (Piece piece : this.pieces) {
-            if ((!piece.isCaptured() && piece.getColumn() == column) && (
+            if ((!piece.isCaptured() &&
+                    piece.getColumn() == column) && (
                     (piece.getRow() == row) ||
                             (piece.getType() == Type.PAWN && piece.isEnPassant() && (
                                     (piece.getColor() == Color.WHITE && piece.getRow() == row + 1 && piece.getRow() == Piece.ROW_4) ||

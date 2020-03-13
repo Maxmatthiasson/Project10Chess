@@ -13,8 +13,8 @@ public class MoveValidator {
 
     private ChessGame chessGame;
     private Piece sourcePiece;
-    private Piece targetPiece;
     private boolean output = true;
+    private int targetRow, targetCol;
 
     public MoveValidator(ChessGame chessGame) {
         this.chessGame = chessGame;
@@ -29,71 +29,66 @@ public class MoveValidator {
      * @param targetColumn
      * @return true if move is valid, false if move is invalid
      */
-    public boolean isMoveValid(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
-
+    public Move[] isMoveValid(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
         // check if target location within boundaries
         if (targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8
                 || targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H) {
             if (output)
                 System.out.println("target row or column out of scope");
-            return false;
+            return null;
         }
         sourcePiece = chessGame.getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
-        targetPiece = this.chessGame.getNonCapturedPieceAtLocation(targetRow, targetColumn);
+        this.targetRow = targetRow;
+        this.targetCol = targetColumn;
 
         // source piece has right color?
         if (sourcePiece.getColor() != chessGame.getGameState()) {
             System.out.println("it's not your turn");
-            return false;
+            return null;
         }
 
         // target location possible?
-        if (!(isTargetLocationFree() || isTargetLocationCaptureable() || isValidCastlingMove(targetRow, targetColumn))) {
+        /*if (!(isTargetLocationFree() || isTargetLocationCaptureable() || isValidCastlingMove(targetRow, targetColumn))) {
             if (output)
                 System.out.println("target location not free and not captureable");
             return false;
-        }
+        }*/
 
         // validate piece movement rules
-        boolean validPieceMove = false;
+        Move[] validMoves = null;
         switch (sourcePiece.getType()) {
             case BISHOP:
-                validPieceMove = isValidBishopMove(sourceRow, sourceColumn, targetRow, targetColumn);
+                validMoves = isValidBishopMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
             case KING:
-                validPieceMove = isValidKingMove(sourceRow, sourceColumn, targetRow, targetColumn);
+                validMoves = isValidKingMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
             case KNIGHT:
-                validPieceMove = isValidKnightMove(sourceRow, sourceColumn, targetRow, targetColumn);
+                validMoves = isValidKnightMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
             case PAWN:
-                validPieceMove = isValidPawnMove(sourceRow, sourceColumn, targetRow, targetColumn);
+                validMoves = isValidPawnMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
             case QUEEN:
-                validPieceMove = isValidQueenMove(sourceRow, sourceColumn, targetRow, targetColumn);
+                validMoves = isValidQueenMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
             case ROOK:
-                validPieceMove = isValidRookMove(sourceRow, sourceColumn, targetRow, targetColumn);
-                break;
-            default:
+                validMoves = isValidRookMove(sourceRow, sourceColumn, targetRow, targetColumn);
                 break;
         }
-        targetPiece = null;
-        return validPieceMove;
+        return validMoves;
     }
 
-    private boolean isTargetLocationCaptureable() {
-        if (targetPiece == null) {
-            return false;
-        } else if (targetPiece.getColor() != sourcePiece.getColor()) {
-            return true;
-        } else {
-            return false;
-        }
+    private Piece isTargetLocationCaptureable() {
+        Piece targetPiece = chessGame.getNonCapturedPieceAtLocation(targetRow, targetCol);
+        if (targetPiece != null && targetPiece.getColor() != sourcePiece.getColor())
+                return targetPiece;
+        else
+            return null;
     }
 
-    private boolean isTargetLocationFree() {
-        return targetPiece == null;
+    /*private boolean isTargetLocationFree() {
+        return chessGame.getNonCapturedPieceAtLocation(targetRow, targetCol) == null;
     }
 
     public boolean isValidCastlingMove(int targetRow, int targetCol) {
@@ -110,7 +105,7 @@ public class MoveValidator {
         }
         return valid;
     }
-
+*/
     public Piece getCastlingRook(int targetRow, int targetCol) {
         int rookTargetCol = -1;
         if (targetCol == 2)
@@ -127,25 +122,38 @@ public class MoveValidator {
             return null;
     }
 
-    private boolean isValidBishopMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
+    private Move[] getMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
+        Move[] move = new Move[1];
+        if (!arePiecesBetweenSourceAndTarget(sourceRow, sourceColumn, targetRow, targetColumn))
+            if (!chessGame.isNonCapturedPieceAtLocation(sourceRow, sourceColumn))
+                move[0] = new Move(sourceRow, sourceColumn, targetRow, targetColumn, sourcePiece);
+            else {
+                Piece targetPiece = chessGame.getNonCapturedPieceAtLocation(targetRow, targetColumn);
+                if (targetPiece != null) {
+                    move[0] = new Move(sourceRow, sourceColumn, targetRow, targetColumn, sourcePiece);
+                    move[0].setCaptured(targetPiece);
+                }
+            }
+            return move;
+    }
+
+    private Move[] isValidBishopMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
         //The bishop can move any number of squares diagonally, but may not leap
         //over other pieces.
 
-        boolean isValid;
+        Move[] move = null;
         // first lets check if the path to the target is diagonally at all
         int diffRow = Math.abs(targetRow - sourceRow);
         int diffColumn = Math.abs(targetColumn - sourceColumn);
 
         if (diffRow == diffColumn && diffColumn > 0) {
-            isValid = !arePiecesBetweenSourceAndTarget(sourceRow, sourceColumn, targetRow, targetColumn);
 
         } else {
             // not moving diagonally
             if (sourcePiece.getType() != Type.QUEEN)
                 System.out.println("not moving diagonally");
-            isValid = false;
         }
-        return isValid;
+        return move;
     }
 
     private boolean isValidQueenMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
@@ -216,7 +224,7 @@ public class MoveValidator {
         // called castling and also involves a rook.
         Piece castlingRook = getCastlingRook(targetRow, targetColumn);
 
-        if (sourceRow - targetRow == 0 && Math.abs(sourceColumn-targetColumn) == 2 &&
+        if (sourceRow - targetRow == 0 && Math.abs(sourceColumn - targetColumn) == 2 &&
                 castlingRook != null &&
                 !checkValidator(sourcePiece.getColor()) && // One may not castle out of, through, or into check.
                 !arePiecesBetweenSourceAndTarget(sourceRow, sourceColumn, targetRow, targetColumn) &&
