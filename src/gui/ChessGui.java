@@ -169,7 +169,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		lblWhiteTimer.setBounds(590, 10, 200, 50);
 		blackTimerImage.setBounds(298,25,20,20);
 		whiteTimerImage.setBounds(565,25,20,20);
-		
+
 		add(lblBlackTimer);
 		add(lblWhiteTimer);
 		add(whiteTimerImage);
@@ -751,9 +751,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	 */
 	private void newGame() {
 		if (!(chessGame.getPlayer() instanceof ChessLocal)) {
+			String newColor = newGameColor();
 			capPieces.clear();
 			chessGame.sendCommand("####");
-			chessGame.sendCommand("COLOR" + newGameColor());
+			chessGame.sendCommand("COLOR" + newColor);
 		}
 		resetBoard();
 	}
