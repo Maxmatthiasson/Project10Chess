@@ -50,31 +50,33 @@ public class PiecesDragAndDropListener implements MouseListener, MouseMotionList
 		// we check the list from top to bottom
 		// (therefore we iterate in reverse order)
 		//
-		for (int i = guiPieces.size()-1; i >= 0; i--) {
-			GuiPiece guiPiece = guiPieces.get(i);
-			if (guiPiece.isCaptured()) continue;
+		if (!chessGui.inMate()) {
+			for (int i = guiPieces.size() - 1; i >= 0; i--) {
+				GuiPiece guiPiece = guiPieces.get(i);
+				if (guiPiece.isCaptured()) continue;
 
-			if(ChessGui.mouseOverPiece(guiPiece,x,y)){
-				
-				if (chessGui.getGameState() == guiPiece.getColor() && chessGui.getColor() == guiPiece.getColor()){
-					// calculate offset, because we do not want the drag piece
-					// to jump with it's upper left corner to the current mouse
-					// position
-					//
-					dragOffsetX = x - guiPiece.getX();
-					dragOffsetY = y - guiPiece.getY();
-					dragPiece = guiPiece;
-					sx = x;
-					sy = y;
-					break;
+				if (ChessGui.mouseOverPiece(guiPiece, x, y)) {
+
+					if (chessGui.getGameState() == guiPiece.getColor() && chessGui.getColor() == guiPiece.getColor()) {
+						// calculate offset, because we do not want the drag piece
+						// to jump with it's upper left corner to the current mouse
+						// position
+						//
+						dragOffsetX = x - guiPiece.getX();
+						dragOffsetY = y - guiPiece.getY();
+						dragPiece = guiPiece;
+						sx = x;
+						sy = y;
+						break;
+					}
 				}
 			}
-		}
-		
-		// move drag piece to the top of the list
-		if(dragPiece != null){
-			guiPieces.remove( dragPiece );
-			guiPieces.add(dragPiece);
+
+			// move drag piece to the top of the list
+			if (dragPiece != null) {
+				guiPieces.remove(dragPiece);
+				guiPieces.add(dragPiece);
+			}
 		}
 	}
 

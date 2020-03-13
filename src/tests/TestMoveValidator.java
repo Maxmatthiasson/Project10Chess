@@ -17,22 +17,21 @@ public class TestMoveValidator {
         // ok
         sourceRow = Piece.ROW_2; sourceColumn = Piece.COLUMN_D;
         targetRow = Piece.ROW_3; targetColumn = Piece.COLUMN_D;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
-        ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
-        System.out.println(testCounter+". test result: "+(true==isValid));
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
+        System.out.println(testCounter+". test result: "+(isValid));
         testCounter++;
 
         // it's not white's turn
         sourceRow = Piece.ROW_2; sourceColumn = Piece.COLUMN_B;
         targetRow = Piece.ROW_3; targetColumn = Piece.COLUMN_B;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(false==isValid));
         testCounter++;
 
         // ok
         sourceRow = Piece.ROW_7; sourceColumn = Piece.COLUMN_E;
         targetRow = Piece.ROW_6; targetColumn = Piece.COLUMN_E;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(true==isValid));
         testCounter++;
@@ -40,14 +39,14 @@ public class TestMoveValidator {
         // pieces in the way
         sourceRow = Piece.ROW_1; sourceColumn = Piece.COLUMN_F;
         targetRow = Piece.ROW_4; targetColumn = Piece.COLUMN_C;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(false==isValid));
         testCounter++;
 
         // ok
         sourceRow = Piece.ROW_1; sourceColumn = Piece.COLUMN_C;
         targetRow = Piece.ROW_4; targetColumn = Piece.COLUMN_F;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(true==isValid));
         testCounter++;
@@ -55,7 +54,7 @@ public class TestMoveValidator {
         // ok
         sourceRow = Piece.ROW_8; sourceColumn = Piece.COLUMN_B;
         targetRow = Piece.ROW_6; targetColumn = Piece.COLUMN_C;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(true==isValid));
         testCounter++;
@@ -63,21 +62,21 @@ public class TestMoveValidator {
         // invalid knight move
         sourceRow = Piece.ROW_1; sourceColumn = Piece.COLUMN_G;
         targetRow = Piece.ROW_3; targetColumn = Piece.COLUMN_G;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(false==isValid));
         testCounter++;
 
         // invalid knight move
         sourceRow = Piece.ROW_1; sourceColumn = Piece.COLUMN_G;
         targetRow = Piece.ROW_2; targetColumn = Piece.COLUMN_E;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(false==isValid));
         testCounter++;
 
         // ok
         sourceRow = Piece.ROW_1; sourceColumn = Piece.COLUMN_G;
         targetRow = Piece.ROW_3; targetColumn = Piece.COLUMN_H;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(true==isValid));
         testCounter++;
@@ -85,7 +84,7 @@ public class TestMoveValidator {
         // pieces in between
         sourceRow = Piece.ROW_8; sourceColumn = Piece.COLUMN_A;
         targetRow = Piece.ROW_5; targetColumn = Piece.COLUMN_A;
-        isValid = mo.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        isValid = ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         ch.movePiece(sourceRow, sourceColumn, targetRow, targetColumn);
         System.out.println(testCounter+". test result: "+(false==isValid));
         testCounter++;

@@ -133,6 +133,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		return chessGame.getGameState();
 	}
 
+	public boolean inMate() {
+		return chessGame.inMate();
+	}
+
 	private void setupGameStateLabel() {
 		String labelText = chessGame.getGameStateAsText();
 		lblGameState = new JLabel(labelText);
@@ -463,6 +467,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 			for (GuiPiece g : guiPieces)
 				g.resetToUnderlyingPiecePosition();
 		}
+		repaint();
 	}
 
 	public void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
@@ -757,7 +762,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		}
 
 		chessGame.setTimerForPlayers(timePlayer);
-
+		lblGameState.setText(chessGame.getGameStateAsText());
 		// create chess game
 		chessGame.startPositions();
 
@@ -905,7 +910,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
                     Piece p = chessGame.getNonCapturedPieceAtLocation(row, col);
 
                     if (p != null && p.getColor() == chessGame.getGameState() && p.getColor() == chessGame.getPlayer().getColor()) {
-                        LinkedList<int[]> temp = chessGame.getValidMoves(p);
+                    	LinkedList<int[]> temp = chessGame.getValidMoves(p);
                         if (temp != null)
                             possibleMoves = temp;
                         ChessGui.this.repaint();
