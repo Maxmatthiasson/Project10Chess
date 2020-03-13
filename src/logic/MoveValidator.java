@@ -216,7 +216,7 @@ public class MoveValidator {
         // called castling and also involves a rook.
         Piece castlingRook = getCastlingRook(targetRow, targetColumn);
 
-        if (sourceRow - targetRow == 0 && Math.abs(sourceColumn-targetColumn) == 2 &&
+        if (sourceRow - targetRow == 0 && Math.abs(sourceColumn - targetColumn) == 2 &&
                 castlingRook != null &&
                 !checkValidator(sourcePiece.getColor()) && // One may not castle out of, through, or into check.
                 !arePiecesBetweenSourceAndTarget(sourceRow, sourceColumn, targetRow, targetColumn) &&
@@ -351,7 +351,7 @@ public class MoveValidator {
                 jumpRow += row[i];
                 jumpCol += col[i];
                 moveIsValid = isMoveValid(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol);
-                if (moveIsValid) // && !testMoveForCheck(p, p.getRow() + jumpRow, p.getColumn() + jumpCol))
+                if (moveIsValid && !testMoveForCheck(p, p.getRow() + jumpRow, p.getColumn() + jumpCol))
                     moves.add(new int[]{p.getRow() + jumpRow, p.getColumn() + jumpCol});
             } while (moveIsValid);
         }
