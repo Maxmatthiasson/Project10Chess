@@ -212,7 +212,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
 	private void setupInfoPanel() {
 		infoP = new JLabel(new ImageIcon("img/info.png"));
-		infoP.setBounds(110, 20, 560, 730);
+		infoP.setBounds(80, -5, 600, 796);
 		infoP.setVisible(false);
 		add(infoP, 2, 0);
 	}
