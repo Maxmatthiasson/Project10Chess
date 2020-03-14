@@ -284,8 +284,9 @@ public class ChessGame {
         }else if(timeBlack <= 0 && playingWithTime){
             ret += "Time run out, White wins!";
         }
-        else {
+        else if(gameState != null){
             ret += gameState.toString().substring(0, 1).toUpperCase() + gameState.toString().substring(1).toLowerCase() + "'s move" + (check != null ? "<br>" + check + " in check" : "");
+
         }
         return ret + "</html>";
     }
@@ -322,7 +323,7 @@ public class ChessGame {
 
     public void run() {
         String line;
-        while (true) {
+        while (player != null) {
             line = player.getCommand();
             process(line);
         }
@@ -339,11 +340,17 @@ public class ChessGame {
             case "LOCAL":
                 player = new ChessLocal();
                 break;
+            case "NULL":
+                player = null;
+                break;
+
         }
     }
 
     public void sendCommand(String command) {
-        player.sendCommand(command);
+        if (player != null){
+            player.sendCommand(command);
+        }
     }
 
     private void process(String command) {
@@ -365,6 +372,10 @@ public class ChessGame {
             String color = command.substring(5);
             player.setColor(Color.valueOf(color));
             gui.setColor(player.getColor());
+        }else if(command.equals("EXITGAME")){
+            gui.exitGame();
+            System.out.println("Process: " + command);
+
         }
     }
 
@@ -384,7 +395,9 @@ public class ChessGame {
                 System.out.println("50 move rule, stalemate!");
             }
             this.gameState = null;
-            this.timer.cancel();
+            if(timer != null){
+                this.timer.cancel();
+            }
 
         }
     }
@@ -466,10 +479,11 @@ public class ChessGame {
      Initiates timers for the players, olny if they want to play with time.
      */
     public void setTimerForPlayers(int time){
-        if(time != 0){
+        if(time != 0 ){
             this.timeBlack = time;
             this.timeWhite = time;
             setupTimer();
+            playingWithTime = true;
         }else{
             playingWithTime = false;
         }
@@ -483,4 +497,20 @@ public class ChessGame {
     public void setGui(ChessGui gui){
         this.gui = gui;
     }
+
+    /**
+     * Reset variables.
+     */
+    public void stopGame(){
+        gameState = null;
+        check = null;
+        mate = null;
+        moveCounter = 0;
+        promotion = null;
+        if(timer != null){
+            timer.cancel();
+            timer = null;
+        }
+    }
+
 }

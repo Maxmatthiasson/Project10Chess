@@ -45,6 +45,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private JButton btnCancelHost = new JButton("X");
 	private JButton soundButton = new JButton();
 	private JButton btnSend = new JButton("Send");
+	private JButton btnExitGame = new JButton("Exit Game");
 
 	private JLabel lblGameState;
 	private JLabel lblPlayerColor;
@@ -79,7 +80,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private ChessGame chessGame;
 	private List<GuiPiece> guiPieces = new ArrayList<>();
 	private List<GuiPiece> capPieces= new ArrayList<>();
-
+	private ChessMoveListener chessMoveListener;
 	//	private capturedPiece capturedPiece;
 
 	private Thread thrJoin;
@@ -121,6 +122,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		applicationFrame();
 		soundButton();
 		setupTimer();
+		setupExitGameButton();
 	}
 
 
@@ -150,6 +152,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		lblPlayerColor.setForeground(java.awt.Color.WHITE);
 		add(lblPlayerColor);
 	}
+
 
 	private void setupTimer(){
 		ImageIcon blackTimerIcon = new ImageIcon("img/blackTimer.png");
@@ -181,6 +184,12 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		newGame.setBounds(50, 350, 210, 50);
 		newGame.addActionListener(e -> newGame());
 		add(newGame);
+	}
+
+	public void setupExitGameButton(){
+		btnExitGame.setBounds(50, 405, 210, 50);
+		btnExitGame.addActionListener(e -> exitGame());
+		add(btnExitGame);
 	}
 
 	private void setupMessageBoard() {
@@ -500,7 +509,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	 * Method for trying to join a game a server has started
 	 */
 	private void joinGame() {
-		if (userName.getText().length() > 2) {
+		if((userName.getText().length() > 2 ) && (!userName.getText().equals("Username"))) {
+			System.out.println("Username: " + userName.getText());
 			String ip = JOptionPane.showInputDialog(null, "Enter the IP of the server");
 			if (testIp(ip) || ip.isEmpty()) {
 				chessGame.setPlayer("JOIN");
@@ -560,7 +570,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	 * Method for starting a server that a client can join
 	 */
 	private void hostGame() {
-		if (userName.getText().length() > 2) {
+		if ((userName.getText().length() > 2 ) && (!userName.getText().equals("Username"))) {
 			playWithTime();
 			chessGame.setPlayer("HOST");
 			newGameColor();
@@ -610,9 +620,9 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		playWithTime();
 		chessGame.setPlayer("LOCAL");
 		gameOn.setVisible(false);
-		lblPlayerColor.setVisible(false);
 		btnSend.setEnabled(false);
 		enterGame();
+		lblPlayerColor.setVisible(false);
 	}
 
 	/**
@@ -641,6 +651,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	 * Go from the login screen to the board
 	 */
 	private void enterGame() {
+		lblPlayerColor.setVisible(true);
+		lblGameState.setText(chessGame.getGameStateAsText());
 		userName.setVisible(false);
 		startScreen.setVisible(false);
 		btnJoin.setEnabled(false);
@@ -651,19 +663,69 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		btnLocal.setVisible(false);
 		lblYourIP.setVisible(false);
 
-		addMouseMotionListener(new ChessMoveListener());
-
+		chessMoveListener = new ChessMoveListener();
+		addMouseMotionListener(chessMoveListener);
 		// Not playing with time.
 		if(timePlayer == 0){
 			lblBlackTimer.setVisible(false);
 			lblWhiteTimer.setVisible(false);
 			whiteTimerImage.setVisible(false);
 			blackTimerImage.setVisible(false);
+		}else {
+			lblBlackTimer.setVisible(true);
+			lblWhiteTimer.setVisible(true);
+			whiteTimerImage.setVisible(true);
+			blackTimerImage.setVisible(true);
 		}
 
 		//Initiates the timers for the players.
 		chessGame.setTimerForPlayers(timePlayer);
 		chessGame.start();
+	}
+
+	/**
+	 * Go from board to login screen
+	 */
+	public void exitGame(){
+		// Send to the other player
+		chessGame.sendCommand("EXITGAME");
+
+		// Cancel timer if used
+		if (timePlayer != 0){
+			timePlayer = 0;
+			chessGame.cancelTimer();
+		}
+
+		//Stop game and remove listener
+		chessGame.stopGame();
+		this.removeMouseMotionListener(chessMoveListener);
+
+		// Close communication sockets
+		if(chessGame.getPlayer() instanceof ChessServer){
+			((ChessServer) chessGame.getPlayer()).stopSearchForClient();
+		}else if(chessGame.getPlayer() instanceof ChessClient){
+			((ChessClient) chessGame.getPlayer()).closeSocket();
+		}
+
+		//Reset ui
+		resetBoard();
+		capPieces.clear();
+		startScreen.setVisible(true);
+		chessGame.setPlayer("NULL");
+		btnJoin.setText("Join");
+		btnHost.setText("Host");
+		userName.setText("Username");
+		userName.setForeground(new java.awt.Color(204, 204, 204));
+		userName.setVisible(true);
+		btnJoin.setEnabled(true);
+		btnJoin.setVisible(true);
+		btnHost.setVisible(true);
+		btnHost.setEnabled(true);
+		btnLocal.setEnabled(true);
+		btnLocal.setVisible(true);
+		lblYourIP.setVisible(true);
+		gameOn.setVisible(true);
+		btnSend.setEnabled(true);
 	}
 
 	/**
@@ -673,7 +735,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		infoP.setVisible(!click);
 		click = !click;
 	}
-	//
+
+
 	private void play() {
 		if (sound) {
 			soundButton.setIcon(new ImageIcon("img/mute.png"));
@@ -700,6 +763,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
 	public void setColor(Color color) {
 		lblPlayerColor.setText("You are: " + capitalizeString(color.toString()));
+		System.out.println("Color set:" + color.toString());
 	}
 
 
@@ -758,6 +822,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		}
 		resetBoard();
 	}
+
+
 
 	/**
 	 * Clear the chat and put all pieces back to their original places
