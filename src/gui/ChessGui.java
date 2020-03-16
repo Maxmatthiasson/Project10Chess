@@ -829,13 +829,13 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	 * Clear the chat and put all pieces back to their original places
 	 */
 	public void resetBoard() {
+		chessGame.resetStats();
 		messageBoard.setText(null);
 		if(timePlayer != 0){
 			chessGame.cancelTimer();
 		}
 
 		chessGame.setTimerForPlayers(timePlayer);
-
 		// create chess game
 		chessGame.startPositions();
 
@@ -844,6 +844,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		// wrap game pieces into their graphical representation
 		createAndAddGuiPieces();
 		repaint();
+
 	}
 
 	public void setTimerWhite(int timeWhite){

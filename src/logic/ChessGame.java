@@ -394,7 +394,10 @@ public class ChessGame {
             else {
                 System.out.println("50 move rule, stalemate!");
             }
+
+
             this.gameState = null;
+
             if(timer != null){
                 this.timer.cancel();
             }
@@ -502,15 +505,21 @@ public class ChessGame {
      * Reset variables.
      */
     public void stopGame(){
-        gameState = null;
-        check = null;
-        mate = null;
-        moveCounter = 0;
-        promotion = null;
+        resetStats();
         if(timer != null){
             timer.cancel();
             timer = null;
         }
+    }
+
+    public void resetStats(){
+        gameState = Color.WHITE;
+        mate = null;
+        check = null;
+        moveCounter = 0;
+        promotion = null;
+
+
     }
 
 }
