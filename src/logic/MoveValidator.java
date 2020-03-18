@@ -46,12 +46,14 @@ public class MoveValidator {
 
         // source piece has right color?
         if (sourcePiece.getColor() != chessGame.getGameState()) {
-            System.out.println("It's not your turn");
+            if (output)
+                System.out.println("It's not your turn");
             return validMoves;
         }
 
         if (targetPiece != null && targetPiece.getColor() == sourcePiece.getColor()) {
-            System.out.println("Targetpiece same color");
+            if (output)
+                System.out.println("Targetpiece same color");
             return validMoves;
         }
 
@@ -76,6 +78,11 @@ public class MoveValidator {
                 isValidRookMove();
                 break;
         }
+        if (!validMoves.isEmpty() && !notInCheck(validMoves.getFirst())) {
+            if (output)
+                System.out.println("Move puts king in check");
+            validMoves.clear();
+        }
         return validMoves;
     }
 
@@ -90,8 +97,10 @@ public class MoveValidator {
             validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), targetRow, targetCol, sourcePiece, targetPiece));
         } else {
             // not moving diagonally
-            if (sourcePiece.getType() != Type.QUEEN)
-                System.out.println("Not moving diagonally");
+            if (sourcePiece.getType() != Type.QUEEN) {
+                if (output)
+                    System.out.println("Not moving diagonally");
+            }
         }
     }
 
@@ -141,8 +150,10 @@ public class MoveValidator {
         if ((Math.abs(sourcePiece.getRow() - targetRow) == 2 && Math.abs(sourcePiece.getColumn() - targetCol) == 1) ||
                 (Math.abs(sourcePiece.getRow() - targetRow) == 1 && Math.abs(sourcePiece.getColumn() - targetCol) == 2))
             validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), targetRow, targetCol, sourcePiece, targetPiece));
-        else
-            System.out.println("Invalid knight validMoves");
+        else {
+            if (output)
+                System.out.println("Invalid knight move");
+        }
     }
 
     private void isValidKingMove() {
@@ -180,19 +191,20 @@ public class MoveValidator {
                 }
 
                 if (!isValid) {
-                    System.out.println("Castling puts king in check");
+                    if (output)
+                        System.out.println("Castling puts king in check");
                 } else {
                     validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), sourcePiece.getRow(), sourcePiece.getColumn() + (2 * direction), sourcePiece, null));
                     validMoves.add(new Move(targetPiece.getRow(), targetPiece.getColumn(), targetRow, sourcePiece.getColumn() + direction, this.targetPiece, null));
-                    System.out.println("t: " + targetCol + ", d" + direction);
                 }
             }
         } else {
             if (Math.abs(sourcePiece.getRow() - targetRow) < 2 && Math.abs(sourcePiece.getColumn() - targetCol) < 2) {
-                validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), sourcePiece.getRow(), sourcePiece.getColumn(), sourcePiece, targetPiece));
+                validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), targetRow, targetCol, sourcePiece, targetPiece));
 
             } else {
-                System.out.println("moving too far");
+                if (output)
+                    System.out.println("moving too far");
             }
         }
     }
@@ -224,13 +236,15 @@ public class MoveValidator {
             validMoves.add(new Move(sourcePiece.getRow(), sourcePiece.getColumn(), targetRow, targetCol, sourcePiece, targetPiece));
         } else {
             // not moving diagonally
-            if (sourcePiece.getType() != Type.QUEEN)
-                System.out.println("not moving straight");
+            if (sourcePiece.getType() != Type.QUEEN) {
+                if (output)
+                    System.out.println("not moving straight");
+            }
         }
     }
 
-    public LinkedList<int[]> getValidMoves(Piece p) {
-        LinkedList<int[]> moves = new LinkedList<>();
+    public LinkedList<Move> getValidMoves(Piece p) {
+        LinkedList<Move> moves = new LinkedList<>();
         switch (p.getType()) {
             case PAWN:
                 getValidPawnMoves(p, moves);
@@ -249,6 +263,22 @@ public class MoveValidator {
         return moves;
     }
 
+    private boolean outOfMate(Piece p) {
+        switch (p.getType()) {
+            case PAWN:
+                return getValidPawnMoves(p, null);
+            case KNIGHT:
+                return getValidKnightMoves(p, null);
+            case ROOK:
+            case BISHOP:
+            case QUEEN:
+                return getValidBishopQueenRookMoves(p, null);
+            case KING:
+                return getValidKingMoves(p, null);
+        }
+        return false;
+    }
+
     /**
      * The following methods are used in two ways: if the list is null, it will return a boolean
      * whether there are any possible moves or not (as soon as a valid Move is found it breaks off)
@@ -260,34 +290,36 @@ public class MoveValidator {
      * @param p     The piece to moves for
      * @param moves The list to add moves to (a LinkedList of int arrays with [row][col])
      */
-    private void getValidPawnMoves(Piece p, LinkedList<int[]> moves) {
+    private boolean getValidPawnMoves(Piece p, LinkedList<Move> moves) {
         int[] row = (p.getColor() == Color.BLACK ? new int[]{-1, -1, -1, -2} : new int[]{1, 1, 1, 2});
         int[] col = {-1, 0, 1, 0};
         for (int i = 0; i < row.length; i++) {
             isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]);
-            if ((i < 3 || p.onStartingPlace()) && !validMoves.isEmpty() &&
-                    !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
-                moves.add(new int[]{p.getRow() + row[i], p.getColumn() + col[i]});
-        }
-    }
-
-    private boolean getValidKnightMoves(Piece p, LinkedList<int[]> moves) {
-        int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
-        int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
-
-        for (int i = 0; i < row.length; i++) {
-            isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]);
-            if (!validMoves.isEmpty() &&
-                    !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
+            if ((i < 3 || p.onStartingPlace()) && !validMoves.isEmpty())
                 if (moves != null)
-                    moves.add(new int[]{p.getRow() + row[i], p.getColumn() + col[i]});
+                    moves.addAll(validMoves);
                 else
                     return true;
         }
         return false;
     }
 
-    private void getValidBishopQueenRookMoves(Piece p, List moves) {
+    private boolean getValidKnightMoves(Piece p, LinkedList<Move> moves) {
+        int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
+        int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
+
+        for (int i = 0; i < row.length; i++) {
+            isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]);
+            if (!validMoves.isEmpty())
+                if (moves != null)
+                    moves.addAll(validMoves);
+                else
+                    return true;
+        }
+        return false;
+    }
+
+    private boolean getValidBishopQueenRookMoves(Piece p, LinkedList<Move> moves) {
         int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook validMoves (straight), 4-7: bishop validMoves (diagonally)
         int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
         int begin = 0, end = 7;
@@ -305,22 +337,25 @@ public class MoveValidator {
                 jumpRow += row[i];
                 jumpCol += col[i];
                 isMoveValid(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol);
-                moveIsValid = !validMoves.isEmpty() && !testMoveForCheck(p, p.getRow() + jumpRow, p.getColumn() + jumpCol);
+                moveIsValid = !validMoves.isEmpty();
                 if (moveIsValid)
-                    moves.add(new int[]{p.getRow() + jumpRow, p.getColumn() + jumpCol});
+                    if (moves != null)
+                        moves.addAll(validMoves);
+                    else
+                        return true;
             } while (moveIsValid);
         }
+        return false;
     }
 
-    private boolean getValidKingMoves(Piece p, LinkedList<int[]> moves) {
+    private boolean getValidKingMoves(Piece p, LinkedList<Move> moves) {
         for (int row = Math.max(p.getRow() - 1, Piece.ROW_1); row <= Math.min(p.getRow() + 1, Piece.ROW_8); row++)
             for (int col = Math.max(p.getColumn() - 1, Piece.COLUMN_A); col <= Math.min(p.getColumn() + 1, Piece.COLUMN_H); col++) {
                 isMoveValid(p.getRow(), p.getColumn(), row, col);
                 if (!(row == p.getRow() && col == p.getColumn()) &&
-                        !validMoves.isEmpty() &&
-                        !testMoveForCheck(p, row, col))
+                        !validMoves.isEmpty())
                     if (moves != null)
-                        moves.add(new int[]{row, col});
+                        moves.addAll(validMoves);
                     else
                         return true;
             }
@@ -328,13 +363,13 @@ public class MoveValidator {
             isMoveValid(p.getRow(), p.getColumn(), p.getRow(), p.getColumn() + 2);
             if (!validMoves.isEmpty())
                 if (moves != null)
-                    moves.add(new int[]{p.getRow(), p.getColumn() + 2});
+                    moves.addAll(validMoves);
                 else
                     return true;
             isMoveValid(p.getRow(), p.getColumn(), p.getRow(), p.getColumn() - 2);
             if (!validMoves.isEmpty())
                 if (moves != null)
-                    moves.add(new int[]{p.getRow(), p.getColumn() - 2});
+                    moves.addAll(validMoves);
                 else
                     return true;
         }
@@ -357,7 +392,8 @@ public class MoveValidator {
             }
 
             if (this.chessGame.isNonCapturedPieceAtLocation(currentRow, currentColumn)) {
-                System.out.println("pieces in between source and target");
+                if (output)
+                    System.out.println("pieces in between source and target");
                 return true;
             }
 
@@ -365,6 +401,17 @@ public class MoveValidator {
             currentColumn += columnIncrementPerStep;
         }
         return false;
+    }
+
+    private boolean notInCheck(Move move) {
+        move.piece.setRow(move.targetRow);
+        move.piece.setColumn(move.targetColumn);
+        move.flipCapture();
+        boolean check = checkValidator(move.piece.getColor());
+        move.piece.setRow(move.sourceRow);
+        move.piece.setColumn(move.sourceColumn);
+        move.flipCapture();
+        return !check;
     }
 
     public boolean checkValidator(Color color) {
@@ -449,82 +496,18 @@ public class MoveValidator {
     }
 
     boolean mateValidator(List<Piece> pieces, Color color) {
-        for (Piece p : pieces) {
-            if (p.getColor() == color && !p.isCaptured()) {
-
-                if (p.getType() == Type.PAWN) {
-                    int[] row = (color == Color.BLACK ? new int[]{-1, -1, -1, -2} : new int[]{1, 1, 1, 2});
-                    int[] col = {-1, 0, 1, 0};
-                    for (int i = 0; i < row.length; i++) {
-                        isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]);
-                        if ((i < 3 || p.onStartingPlace()) && !validMoves.isEmpty() &&
-                                !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
-                            return false;
-                    }
-                } else if (p.getType() == Type.KING) {
-                    for (int row = Math.max(p.getRow() - 1, Piece.ROW_1); row <= Math.min(p.getRow() + 1, Piece.ROW_8); row++)
-                        for (int col = Math.max(p.getColumn() - 1, Piece.COLUMN_A); col <= Math.min(p.getColumn() + 1, Piece.COLUMN_H); col++) {
-                            isMoveValid(p.getRow(), p.getColumn(), row, col);
-                            if (!(row == p.getRow() && col == p.getColumn()) &&
-                                    !validMoves.isEmpty() &&
-                                    !testMoveForCheck(p, row, col))
-                                return false;
-                        }
-                } else if (p.getType() == Type.BISHOP || p.getType() == Type.ROOK || p.getType() == Type.QUEEN) {
-                    int[] row = {1, 0, -1, 0, 1, 1, -1, -1}; // index 0-3: rook validMoves (straight), 4-7: bishop validMoves (diagonally)
-                    int[] col = {0, 1, 0, -1, 1, -1, -1, 1};
-                    int begin = 0, end = 7;
-
-                    if (p.getType() == Type.ROOK)
-                        end = 3;
-                    else if (p.getType() == Type.BISHOP)
-                        begin = 4;
-
-                    for (int i = begin; i <= end; i++) {
-                        int jumpRow = 0;
-                        int jumpCol = 0;
-                        boolean moveIsValid;
-                        do {
-                            jumpRow += row[i];
-                            jumpCol += col[i];
-                            isMoveValid(p.getRow(), p.getColumn(), p.getRow() + jumpRow, p.getColumn() + jumpCol);
-                            moveIsValid = !validMoves.isEmpty();
-                            if (moveIsValid &&
-                                    !testMoveForCheck(p, p.getRow() + jumpRow, p.getColumn() + jumpCol))
-                                return false;
-                        } while (moveIsValid);
-                    }
-                } else if (p.getType() == Type.KNIGHT) {
-                    int[] row = {2, 2, -2, -2, 1, 1, -1, -1};
-                    int[] col = {1, -1, 1, -1, 2, -2, 2, -2};
-
-                    for (int i = 0; i < row.length; i++) {
-                        isMoveValid(p.getRow(), p.getColumn(), p.getRow() + row[i], p.getColumn() + col[i]);
-                        if (!validMoves.isEmpty() &&
-                                !testMoveForCheck(p, p.getRow() + row[i], p.getColumn() + col[i]))
-                            return false;
-                    }
-                }
-            }
-        }
+        for (Piece p : pieces)
+            if (p.getColor() == color && !p.isCaptured())
+                if (outOfMate(p))
+                    return false;
         return true;
-    }
-
-    private boolean testMoveForCheck(Piece piece, int targetRow, int targetColumn) {
-        int sourceRow = piece.getRow(), sourceColumn = piece.getColumn();
-        piece.setRow(targetRow);
-        piece.setColumn(targetColumn);
-        boolean mate = checkValidator(piece.getColor());
-        piece.setRow(sourceRow);
-        piece.setColumn(sourceColumn);
-        return mate;
     }
 
     /**
      * Method for switching off console output, so the player won't see all the failed tries the computer does
      * when trying to find out if a player is in checkmate
      */
-    public void switchOutput() {
-        output = !output;
+    public void setOutput(boolean output) {
+        this.output = output;
     }
 }

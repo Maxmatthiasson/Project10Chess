@@ -151,16 +151,6 @@ public class ChessGame {
             m.flipCapture();
         }
 
-        if (moveValidator.checkValidator(piece.getColor())) {
-            System.out.println("illegal move, puts king in check");
-            for (Move m : moves) {
-                m.piece.setRow(m.sourceRow);
-                m.piece.setColumn(m.sourceColumn);
-                m.flipCapture();
-            }
-            return false;
-        }
-
         check = null; // If a move was successful, current player isn't in check
         resetCounter = (!moves.isEmpty() && moves.getFirst().captured != null && moves.getFirst().captured.isCaptured());
 
@@ -193,7 +183,7 @@ public class ChessGame {
         if (moveValidator.checkValidator(opponentColor)) {
             // stopping the console from being flooded by all the faulty
             // moves the computer tries to make while trying to test checkmate
-            moveValidator.switchOutput();
+            moveValidator.setOutput(false);
             check = opponentColor;
             System.out.println(check.toString() + " in check");
             if (moveValidator.mateValidator(pieces, check)) {
@@ -201,7 +191,7 @@ public class ChessGame {
                 System.out.println(mate + " in checkmate");
             }
             // Turn the console output on again
-            moveValidator.switchOutput();
+            moveValidator.setOutput(true);
         }
 
         for (Piece p : pieces.stream().filter(p -> p.getType() == Type.PAWN && p.getColor() == gameState).collect(Collectors.toList()))
@@ -254,7 +244,7 @@ public class ChessGame {
         promotion = type;
     }
 
-    public LinkedList<int[]> getValidMoves(Piece p) {
+    public LinkedList<Move> getValidMoves(Piece p) {
         return moveValidator.getValidMoves(p);
     }
 
@@ -465,6 +455,9 @@ public class ChessGame {
         }
     }
 
+    public void setOutput(boolean output) {
+        moveValidator.setOutput(output);
+    }
 
     public void cancelTimer() {
         this.timer.cancel();

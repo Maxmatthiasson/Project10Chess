@@ -428,6 +428,7 @@ class MoveValidatorTest {
         pieces.add(new Piece(Color.WHITE, Type.ROOK,3, 0));
         pieces.add(new Piece(Color.BLACK, Type.ROOK,2, 5));
         ChessGame game = new ChessGame(pieces);
+        System.out.println(game.toString());
         game.movePiece(1, 3, 3, 3);
         assertTrue(game.movePiece(2,5,2,3) && pawn.isCaptured());
     }
