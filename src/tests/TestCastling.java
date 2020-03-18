@@ -23,7 +23,7 @@ public class TestCastling {
         System.out.println(cg.toString());
 
         System.out.println("Castling");
-        cg.movePiece(Piece.ROW_8, Piece.COLUMN_E, Piece.ROW_8, Piece.COLUMN_H);
+        cg.movePiece(Piece.ROW_8, Piece.COLUMN_E, Piece.ROW_8, Piece.COLUMN_G);
 
         System.out.println(cg.toString());
     }

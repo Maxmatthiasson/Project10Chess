@@ -16,11 +16,10 @@ import javax.sound.sampled.Clip;
 import javax.swing.*;
 
 import enums.Color;
-import enums.Type;
+import logic.Move;
 import logic.Piece;
 import online.ChessClient;
 import online.ChessLocal;
-import online.ChessPlayer;
 import online.ChessServer;
 import logic.ChessGame;
 
@@ -57,7 +56,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 	private JLabel lblWhiteTimer;
 	private JLabel whiteTimerImage;
 	private JLabel blackTimerImage;
-	private LinkedList<int[]> possibleMoves = new LinkedList<>();
+	private JLabel clockIconLabel;
+	private LinkedList<Move> possibleMoves = new LinkedList<>();
 
 	private Image dot = new ImageIcon("img/dot.png").getImage();
 
@@ -133,6 +133,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 
 	public Color getGameState() {
 		return chessGame.getGameState();
+	}
+
+	public boolean inMate() {
+		return chessGame.inMate();
 	}
 
 	private void setupGameStateLabel() {
@@ -428,8 +432,8 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 			}
 
 		}
-		for (int[] move : possibleMoves)
-			g.drawImage(dot, GuiHelper.convertColumnToX(move[1]) + 14, GuiHelper.convertRowToY(move[0]) + 14, null);
+		for (Move move : possibleMoves)
+			g.drawImage(dot, GuiHelper.convertColumnToX(move.targetColumn) + 14, GuiHelper.convertRowToY(move.targetRow) + 14, null);
 
 		paintCaptured(g);
 		if (listener.getDragPiece() != null)
@@ -481,6 +485,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 			for (GuiPiece g : guiPieces)
 				g.resetToUnderlyingPiecePosition();
 		}
+		repaint();
 	}
 
 	public void setNewPieceLocationN(int sourceX, int sourceY, int targetX, int targetY) {
@@ -836,6 +841,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
 		}
 
 		chessGame.setTimerForPlayers(timePlayer);
+		lblGameState.setText(chessGame.getGameStateAsText());
 		// create chess game
 		chessGame.startPositions();
 
@@ -974,6 +980,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
         @Override
         public void mouseMoved(MouseEvent e) {
 
+			chessGame.setOutput(false);
             int row = GuiHelper.yToRow(e.getY());
             int col = GuiHelper.xToCol(e.getX());
             //System.out.println("Row: " + row + ", Col: " + col);
@@ -984,9 +991,10 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
                     Piece p = chessGame.getNonCapturedPieceAtLocation(row, col);
 
                     if (p != null && p.getColor() == chessGame.getGameState() && p.getColor() == chessGame.getPlayer().getColor()) {
-                        LinkedList<int[]> temp = chessGame.getValidMoves(p);
-                        if (temp != null)
-                            possibleMoves = temp;
+                    	LinkedList<Move> temp = chessGame.getValidMoves(p);
+                        if (temp != null) {
+							possibleMoves = temp;
+						}
                         ChessGui.this.repaint();
                     } else {
                         possibleMoves.clear();
@@ -998,6 +1006,7 @@ public class ChessGui extends JLayeredPane implements MouseListener, FocusListen
                 possibleMoves.clear();
             }
 			repaint();
+			chessGame.setOutput(true);
         }
 
         @Override

@@ -14,7 +14,6 @@ import online.ChessServer;
 
 import javax.swing.*;
 
-
 /**
  * @author Murat, Alex, Nikola and Ermin
  */
@@ -23,14 +22,13 @@ public class ChessGame {
     private Color gameState = Color.WHITE;
     private Color check;
     private Color mate;
-    private boolean castlingInProgress = false;
     private Type promotion;
     private int moveCounter = 0;
     private int timeBlack;
     private int timeWhite;
     private ChessGui gui;
     private Timer timer;
-    private boolean playingWithTime = true;
+    private boolean playingWithTime = false;
     private ChessPlayer player;
 
     // 0 = bottom, size = top
@@ -94,6 +92,11 @@ public class ChessGame {
             createAndAddPiece(Color.BLACK, Type.PAWN, Piece.ROW_7, i);
         }
         gameState = Color.WHITE;
+        if (player instanceof ChessLocal)
+            player.setColor(Color.WHITE);
+        mate = null;
+        check = null;
+        moveCounter = 0;
     }
 
     /**
@@ -133,66 +136,41 @@ public class ChessGame {
             return false;
         }
 
-        if (!moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow,
-                targetColumn)) {
+        LinkedList<Move> moves = moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn);
+        if (moves.isEmpty()) {
             System.out.println("move invalid");
             return false;
         }
 
         Color opponentColor = (piece.getColor().reverse());
 
-            Piece opponentPiece = getNonCapturedPieceAtLocation(targetRow, targetColumn);
+        for (Move m : moves) {
+            m.piece.setRow(m.targetRow);
+            m.piece.setColumn(m.targetColumn);
+            m.flipCapture();
+        }
 
-            // check if the move is capturing an opponent piece
-            if (opponentPiece != null && opponentPiece.getColor() != piece.getColor()) {
-                opponentPiece.isCaptured(true);
-                resetCounter = true;
-            }
+        check = null; // If a move was successful, current player isn't in check
+        resetCounter = (!moves.isEmpty() && moves.getFirst().captured != null && moves.getFirst().captured.isCaptured());
 
-            if (moveValidator.isValidCastlingMove(targetRow, targetColumn)) {
-                Piece castlingRook = moveValidator.getCastlingRook(targetRow, targetColumn);
-                if (castlingRook.getColumn() == 0) {
-                    piece.setColumn(piece.getColumn() - 2);
-                    castlingRook.setColumn(castlingRook.getColumn() + 3);
-                    castlingRook.touch();
-                } else {
-                    piece.setColumn(piece.getColumn() + 2);
-                    castlingRook.setColumn(castlingRook.getColumn() - 2);
-                    castlingRook.touch();
+        if (piece.getType() == Type.PAWN) {
+            resetCounter = true;
+            // Check for promotion
+            if (promotion == null) { // If the promotion is local
+                if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
+                        (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
+                    String[] buttons = {"Queen", "Rook", "Bishop", "Knight", "Pawn"};
+                    int returnValue = JOptionPane.showOptionDialog(null, "Promote your pawn?", "Promotion",
+                            JOptionPane.DEFAULT_OPTION, 0, null, buttons, 1);
+                    piece.setType(Type.valueOf(buttons[returnValue].toUpperCase()));
                 }
-            } else {
-                piece.setRow(targetRow);
-                piece.setColumn(targetColumn);
+            } else { // If the promotion is remote
+                piece.setType(promotion);
+                promotion = null;
             }
+        }
 
-            if (moveValidator.checkValidator(piece.getColor())) {
-                System.out.println("illegal move, puts king in check");
-                piece.setRow(sourceRow);
-                piece.setColumn(sourceColumn);
-                if (opponentPiece != null)
-                    opponentPiece.isCaptured(false);
-                return false;
-            } else
-                check = null; // If a move was successful, current player isn't in check
-
-            if (piece.getType() == Type.PAWN) {
-                resetCounter = true;
-                // Check for promotion
-                if (promotion == null) { // If the promotion is local
-                    if ((piece.getColor() == Color.WHITE && piece.getRow() == Piece.ROW_8) ||
-                            (piece.getColor() == Color.BLACK && piece.getRow() == Piece.ROW_1)) {
-                        String[] buttons = {"Queen", "Rook", "Bishop", "Knight", "Pawn"};
-                        int returnValue = JOptionPane.showOptionDialog(null, "Promote your pawn?", "Promotion",
-                                JOptionPane.DEFAULT_OPTION, 0, null, buttons, 1);
-                        piece.setType(Type.valueOf(buttons[returnValue].toUpperCase()));
-                    }
-                } else { // If the promotion is remote
-                    piece.setType(promotion);
-                    promotion = null;
-                }
-            }
-
-            piece.touch();
+        piece.touch();
 
         if (resetCounter)
             moveCounter = 0;
@@ -204,7 +182,7 @@ public class ChessGame {
         if (moveValidator.checkValidator(opponentColor)) {
             // stopping the console from being flooded by all the faulty
             // moves the computer tries to make while trying to test checkmate
-            moveValidator.switchOutput();
+            moveValidator.setOutput(false);
             check = opponentColor;
             System.out.println(check.toString() + " in check");
             if (moveValidator.mateValidator(pieces, check)) {
@@ -212,7 +190,7 @@ public class ChessGame {
                 System.out.println(mate + " in checkmate");
             }
             // Turn the console output on again
-            moveValidator.switchOutput();
+            moveValidator.setOutput(true);
         }
 
         for (Piece p : pieces.stream().filter(p -> p.getType() == Type.PAWN && p.getColor() == gameState).collect(Collectors.toList()))
@@ -233,7 +211,8 @@ public class ChessGame {
      */
     public Piece getNonCapturedPieceAtLocation(int row, int column) {
         for (Piece piece : this.pieces) {
-            if ((!piece.isCaptured() && piece.getColumn() == column) && (
+            if ((!piece.isCaptured() &&
+                    piece.getColumn() == column) && (
                     (piece.getRow() == row) ||
                             (piece.getType() == Type.PAWN && piece.isEnPassant() && (
                                     (piece.getColor() == Color.WHITE && piece.getRow() == row + 1 && piece.getRow() == Piece.ROW_4) ||
@@ -260,15 +239,11 @@ public class ChessGame {
         return false;
     }
 
-    void isCastling() {
-        castlingInProgress = true;
-    }
-
     public void setPromotion(Type type) {
         promotion = type;
     }
 
-    public LinkedList<int[]> getValidMoves(Piece p) {
+    public LinkedList<Move> getValidMoves(Piece p) {
         return moveValidator.getValidMoves(p);
     }
 
@@ -279,9 +254,9 @@ public class ChessGame {
         String ret = "<html>";
         if (mate != null) {
             ret += mate + " in mate<br>" + mate.reverse() + " wins!";
-        }else if (timeWhite <= 0 && playingWithTime){
+        } else if (timeWhite <= 0 && playingWithTime) {
             ret += "Time run out, Black wins!";
-        }else if(timeBlack <= 0 && playingWithTime){
+        } else if (timeBlack <= 0 && playingWithTime) {
             ret += "Time run out, White wins!";
         }
         else if(gameState != null){
@@ -293,6 +268,10 @@ public class ChessGame {
 
     public Color getGameState() {
         return gameState;
+    }
+
+    public boolean inMate() {
+        return mate != null;
     }
 
     /**
@@ -386,22 +365,18 @@ public class ChessGame {
 
             if (mate != null) {
                 System.out.println("Game over! " + mate + " won!");
-            }else if(timeWhite <= 0){
-                 System.out.println("Time run out, black wins");
-            }else if (timeBlack <= 0){
-                 System.out.println("Time run out, white wins");
-            }
-            else {
+            } else if (timeWhite <= 0) {
+                System.out.println("Time run out, black wins");
+            } else if (timeBlack <= 0) {
+                System.out.println("Time run out, white wins");
+            } else {
                 System.out.println("50 move rule, stalemate!");
             }
 
-
             this.gameState = null;
 
-            if(timer != null){
+            if (timer != null)
                 this.timer.cancel();
-            }
-
         }
     }
 
@@ -446,59 +421,59 @@ public class ChessGame {
      * Setting up timers for both players.
      * Decreasing time for a player depending on whose turn it is.
      */
-    public void setupTimer(){
+    public void setupTimer() {
         timer = new java.util.Timer();
         gui.setTimerWhite(timeWhite);
         gui.setTimerBlack(timeBlack);
 
-        TimerTask timerTask = new TimerTask(){
+        TimerTask timerTask = new TimerTask() {
 
             @Override
             public void run() {
                 //Black timer
-                if(gameState == Color.BLACK){
+                if (gameState == Color.BLACK) {
                     timeBlack--;
                     gui.setTimerBlack(timeBlack);
                 }
                 //White timer
-                else{
+                else {
                     timeWhite--;
                     gui.setTimerWhite(timeWhite);
                 }
 
                 //If time runs out --> Game over
-                if(timeBlack <= 0){
+                if (timeBlack <= 0) {
                     checkEndConditions();
-                }else if(timeWhite <= 0){
+                } else if (timeWhite <= 0) {
                     checkEndConditions();
                 }
             }
         };
 
-        timer.scheduleAtFixedRate(timerTask,0,1000);
+        timer.scheduleAtFixedRate(timerTask, 0, 1000);
     }
 
     /**
-     Initiates timers for the players, olny if they want to play with time.
+     * Initiates timers for the players, olny if they want to play with time.
      */
-    public void setTimerForPlayers(int time){
-        if(time != 0 ){
+
+    public void setTimerForPlayers(int time) {
+        if (time != 0) {
             this.timeBlack = time;
             this.timeWhite = time;
-            setupTimer();
             playingWithTime = true;
-        }else{
+            setupTimer();
+        } else {
             playingWithTime = false;
         }
     }
 
-
-    public void cancelTimer(){
-        this.timer.cancel();
+    public void setOutput(boolean output) {
+        moveValidator.setOutput(output);
     }
 
-    public void setGui(ChessGui gui){
-        this.gui = gui;
+    public void cancelTimer() {
+        this.timer.cancel();
     }
 
     /**
